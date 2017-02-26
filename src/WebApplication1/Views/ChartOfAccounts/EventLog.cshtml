@@ -1,0 +1,44 @@
+@{
+    ViewData["Title"] = "EventLog";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>EventLog</h2>
+
+<div>
+    <h4>EventLog</h4>
+    <hr />
+    <table>
+        <thead>
+            <tr>
+                <td style="width:200px">
+                    Date
+                </td>
+                <td style="width:200px">
+                    Done by
+                </td>
+                <td style="width:500px">
+                    Description
+                </td>
+           </tr>
+        </thead>
+        <tbody>
+        @foreach (var item in ViewBag.EventLogs.Items)
+        {
+            <tr>
+                <td style="width:200px">
+                    @item.EditedOn
+                </td>
+                <td style="width:200px">
+                    @item.EditedBy
+                </td>
+                <td style="width:500px">
+                    @item.Description
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
+<div>
+</div>

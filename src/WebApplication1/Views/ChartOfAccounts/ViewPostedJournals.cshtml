@@ -1,0 +1,137 @@
+
+@{
+    ViewData["Title"] = "ViewPostedJournals";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>ViewPostedJournals</h2>
+
+
+<p>
+    <a style="width:150px; margin-right:20px" class="btn btn-primary" href="/chartofaccounts/Journalizing"> Create Journal</a>
+
+
+    @if (ViewBag.PrevPage != null)
+    {
+        <a style="width:150px; margin-right:20px" class="btn btn-primary" href="/chartofaccounts/viewjournals?page=@ViewBag.PrevPage "> Previous Page</a>
+    }
+    @if (ViewBag.NextPage != null)
+    {
+        <a style="width:150px; margin-right:20px" class="btn btn-primary" href="/chartofaccounts/viewjournals?page=@ViewBag.NextPage "> Next Page</a>
+    }
+    @if (ViewBag.PostedOnly != "true")
+    {
+        <a style="width:150px; margin-right:20px" class="btn btn-primary" href="/chartofaccounts/submitall"> Submit All Journals</a>
+            @if (ViewBag.UserType == 1 || ViewBag.UserType == 2)
+            {
+                <a style="width:150px; margin-right:20px" class="btn btn-primary" href="/chartofaccounts/post?all=true"> Post All Journals</a>
+            }
+    }
+</p>
+<table class="table" style="margin-bottom: 0px;">
+    <thead>
+        <tr>
+            <th style="width:200px;">
+                Journal ID
+            </th>
+            <th style="width:160px;">
+                Account Name
+            </th>
+            <th style="width:30px">
+
+            </th>
+            <th style="width:100px;text-align: right;">
+                Debit
+            </th>
+            <th style="width:60px">
+            </th>
+            <th style="width:100px;text-align: right;">
+                Credit
+            </th>
+            <th style="width:250px; text-align:center">
+                Actions
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+@{ int j = 0; int colors = 0;
+    @foreach (var item in ViewBag.Transactions)
+    {
+        int i = 0;
+        <table class="table" style="margin-bottom: 0px;">
+            <tbody>
+                @foreach (var iteminside in item.Items)
+                {
+                    <tr>
+                        <td style="display:none"></td>
+                        <td class="addedOn" style="width:200px;">
+                            @if (i == 0)
+                            {
+                                @iteminside.JournalId
+                            }
+                        </td>
+                        <td class="addedOn2" style="width:160px;">
+                            @iteminside.AccountName
+                        </td>
+                        <td style="width:30px">
+                            $
+                        </td>
+                        <td style="width:100px; text-align: right;">
+                            @if (iteminside.isDebit)
+                            {
+                                @if (ViewBag.Color[colors] == true)
+                                {
+                                    <p style="color: green"> @iteminside.Value.ToString("F") </p>
+                                }
+                                else
+                                {
+                                    <p style="color: red"> @iteminside.Value.ToString("F") </p>
+                                }
+                                colors++;
+                            }
+                        </td>
+                        <td style="width:60px;text-align:right">
+                            $
+                        </td>
+                        <td style="width:100px; text-align: right;">
+                            @if (!iteminside.isDebit)
+                            {
+                                @if (ViewBag.Color[colors] == true)
+                                {
+                                    <p style="color: green"> @iteminside.Value.ToString("F") </p>
+                                }
+                                else
+                                {
+                                    <p style="color: red"> @iteminside.Value.ToString("F") </p>
+                                }
+                                colors++;
+                            }
+                        </td>
+                    </tr>
+                    i++;
+                }
+            </tbody>
+        </table>
+        <div style="border-top:1px solid black; border-bottom: 1px solid black;">
+            <div style="width:30px; text-align: center; display:inline-block; margin-left: 357px">
+                $
+            </div>
+            <div style="width:92px; display:inline-block; text-align: right; border-bottom: 1px solid black;">
+                <div style="margin-bottom: 1px; border-bottom: 1px solid black;">
+                    @ViewBag.Totals[(j * 2)].ToString("F")
+                </div>
+            </div>
+            <div style="width:55px; display:inline-block; text-align: right;">
+                $
+            </div>
+            <div style="width:100px; display:inline-block; text-align: right; border-bottom: 1px solid black; margin-bottom: 100px">
+                <div style="margin-bottom: 1px; border-bottom: 1px solid black;">
+                    @ViewBag.Totals[(j * 2) + 1].ToString("F")
+                </div>
+            </div>
+        </div>
+        j++;
+    }}

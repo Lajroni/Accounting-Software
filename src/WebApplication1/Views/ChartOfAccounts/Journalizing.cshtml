@@ -1,0 +1,295 @@
+@{
+    ViewData["Title"] = "Journalizing";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var userInfoJson = Json.Serialize(ViewBag.transactions);
+    var journal = Json.Serialize(ViewBag.JournalId);
+    var view = Json.Serialize(ViewBag.ViewOnly);
+}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.2/css/bootstrap-select.min.css">
+<style>
+    select.selectpicker{
+        display: block;
+    }
+
+
+</style>
+<h2>Journalizing</h2>
+<form asp-action="Journalizing">
+    <div class="form-horizontal">
+        <h4>JournalizingViewModel</h4>
+        <hr />
+        <div asp-validation-summary="ModelOnly" class="text-warning"></div>
+        <div id="errorholder" class="error" style="display:none">
+            <div class="alert alert-warning">
+                <strong>Warning!</strong> There are inactive accounts in the chart of accounts. They cannot be used in journalizing until they become active.
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-md-12">
+                <div class="col-xs-3 control-label" ></div>
+                <div class="col-xs-3"style="display:inline; margin-left:50px; margin-right:20px">
+                </div>
+                @if (!ViewBag.ViewOnly)
+                {
+                    <div id="leftSide" style="">
+                        <p style="width:120px; display: inline-block;"> Debit </p>
+                        <p style="width:120px; display: inline-block;"> Credit </p>
+                    </div>
+                }
+
+            </div>
+        </div>  
+        <div class="form-group" style=@(@ViewBag.ViewOnly == true ? "display:none" : "") } >
+            <div class="col-md-12">
+                <label class="col-xs-3 control-label" style="" for="AvailableAccounts"> Add account: </label>
+                <div class="col-xs-3" style="display:inline; margin-left:50px">
+                    @Html.DropDownList("Accounts", (IEnumerable<SelectListItem>)ViewBag.AvailableAccounts, "Select account", new { @class = "selectpicker" })
+                </div>
+                $
+                <input type="number" value="0.00" id="DebitInput" class="form-control" style="width: 100px; background-color: #dff0d8; display:inline-block" />
+                <p style="margin-left:10px;    display: inline-block;"> $ </p>
+                <input type="number" value="0.00" id="CreditInput" class="form-control" style="width: 100px; background-color: #f2dede;display:inline-block" />
+                <div id="AddDebit" onclick="Add()" class="btn btn-primary" style="float: right; margin-left:50px"> Add to journal</div>
+            </div>
+        </div>
+
+        <hr>
+        <hr>
+        <div class="col-xs-10">
+            <div class="col-xs-offset-2">
+                <div class="col-xs-10">
+                    <b class="col-xs-3 col-xs-offset-5"> Debits</b>
+                    <b class="col-xs-3"> Credits</b>
+                </div>
+            </div>
+
+            <div class="col-xs-offset-2" id="DebitsPart">
+            </div>
+
+            <div class="row ">
+                <b class="col-xs-4"> Credits</b>
+            </div>
+
+            <div class="col-xs-offset-2" id="CreditsPart">
+            </div>
+        </div>
+        @if (!ViewBag.ViewOnly)
+        {
+            <div class="form-group">
+                <div class="col-md-offset-10 col-md-2">
+                    <div id="Journalize" onclick="journalize()" class="btn btn-primary"> Submit </div>
+                    <a class="btn btn-primary" href="/chartofaccounts/viewjournals/"> Cancel </a>
+                </div>
+            </div>
+        }
+
+    </div>
+    <input class="hidden" id="CreditsList">
+    <input class="hidden" id="DebitsList">
+    <input class="hidden" id="CreditsValues">
+    <input class="hidden" id="DebitsValues">
+</form>
+
+<div class="modal fade" id="myModal" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content">
+            <div class="modal-body">
+                <div class="alert alert-success" id="modalAlertSuccess">
+                    <strong>Success!</strong> Journalizing transaction completed.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");
+        <script>
+            var updating = false;
+            var journalId = "";
+            var deletedAcc = ""
+            window.onload = function(e){
+                var View = JSON.parse('@Html.Raw(view)');
+                if(JSON.stringify(View).toLowerCase() == "true"){
+                    $(".col-xs-1 :contains(Remove)").remove()
+                }
+            }
+            $(document).ready(function() {
+                journalId = JSON.parse('@Html.Raw(journal)');
+                var success = @((ViewData["Inactive"] != null).ToString().ToLower());
+                if (success == true) {
+                    $("#errorholder").css("display","block")
+                }
+                var userInfo = JSON.parse('@Html.Raw(userInfoJson)');
+                jQuery.each(userInfo, function(){
+                    updating = true;
+                    $('#Accounts option:contains(' + this.accountName +')').attr("selected", "selected")
+                    if(this.isDebit){
+                        $("#DebitInput").val(this.value);
+                        console.log(this.Value)
+                    } else{
+                        $("#CreditInput").val(this.value);
+                        console.log(2)
+                    }
+                    Add()
+                    $("#CreditInput").val("0.00");
+                    $("#DebitInput").val("0.00");
+                    $('#Accounts option:contains(' + this.accountName +')').attr("selected", "false")
+                })
+
+            });
+            $('.selectpicker').selectpicker({
+                style: 'btn-info',
+                size: 4
+            });
+
+            function Add(){
+                var selected = $("#Accounts option:selected").text();
+                if (selected == "Select account") {
+                    $("#modalAlertSuccess").addClass("alert-danger")
+                    $("#modalAlertSuccess").html('<strong>Error!</strong> Select an account.')
+                    $('#myModal').modal("show");
+                    return;
+                }
+                var valueDeb = parseFloat($("#DebitInput").val()).toFixed(2);
+                var valueCred = parseFloat($("#CreditInput").val()).toFixed(2);
+                if(isNaN(valueDeb)){
+                    $("#DebitInput").val("0.00")
+                    valueDeb = parseFloat($("#DebitInput").val()).toFixed(2);
+                }
+                if(isNaN(valueCred)){
+                    $("#CreditInput").val("0.00")
+                    valueCred = parseFloat($("#CreditInput").val()).toFixed(2);
+                }
+                if(( valueDeb != 0.00) && (valueCred != 0.00)){
+                    $("#modalAlertSuccess").addClass("alert-danger")
+                    $("#modalAlertSuccess").html('<strong>Error!</strong> One account cannot have value on both sides. One must be 0.00.')
+                    $('#myModal').modal("show");
+                }
+                else if(valueDeb < 0){
+                    $("#modalAlertSuccess").addClass("alert-danger")
+                    $("#modalAlertSuccess").html('<strong>Error!</strong> Debit value cannot be negative! Did you mean to add it to the opposite side?')
+                    $('#myModal').modal("show");
+                }
+                else if(valueCred < 0){
+                    $("#modalAlertSuccess").addClass("alert-danger")
+                    $("#modalAlertSuccess").html('<strong>Error!</strong> Credit value cannot be negative! Did you mean to add it to the opposite side?')
+                    $('#myModal').modal("show");
+                }
+                else if(valueCred == 0 && valueDeb == 0){
+                    $("#modalAlertSuccess").addClass("alert-danger")
+                    $("#modalAlertSuccess").html('<strong>Error!</strong> One of the entries must be non-zero!')
+                    $('#myModal').modal("show");
+                }
+                else{
+                    if(valueCred > 0){
+                        if($("#DebitsList").val().includes(selected) || $("#CreditsList").val().includes(selected)){
+                            $("#modalAlertSuccess").addClass("alert-danger")
+                            $("#modalAlertSuccess").html('<strong>Error!</strong> This account is already used on the equation!')
+                            $('#myModal').modal("show");               
+                        }else{
+                            var text = ' <div class="col-md-10"><div class="col-xs-3 col-xs-offset-1">' + selected + '</div> <div class="col-xs-1 col-xs-offset-3"> $ </div> <div class="col-xs-3"> ' + Math.abs(valueCred).toFixed(2) + "" + '</div>  <div class="col-xs-1"> <a onclick="remove(this)"> Remove </a> </div></div>'
+                            $("#CreditsPart").append(text);
+                            $("#CreditsList").val($("#CreditsList").val() + "," + selected)
+                            $("#CreditsValues").val($("#CreditsValues").val() + "," + valueCred)
+                        }
+                    }
+                    else{
+                        if($("#CreditsList").val().includes(selected)){
+                            alert("This account is already used on the other side of equation.")
+                        
+                        }else{
+                            var text = ' <div class="col-md-10"><div class="col-xs-4">' + selected + '</div> <div class=col-xs-1> $ </div> <div class="col-xs-3">' +  Math.abs(valueDeb).toFixed(2) + "" + '</div>  <div class="col-xs-1 col-xs-offset-3"> <a onclick="remove(this)">  Remove </a>  </div></div>'
+                            $("#DebitsPart").append(text);
+                            $("#DebitsList").val($("#DebitsList").val() + "," + selected)
+                            $("#DebitsValues").val($("#DebitsValues").val() + "," + valueDeb)
+                        }
+                    }
+                    $("#CreditInput").val("0.00");
+                    $("#DebitInput").val("0.00");
+                }
+            }
+            function remove(item){
+                var accname = $(item).parent().siblings().first().html()
+                var jqueryentry = "div :contains(" + accname + ")";
+                $(jqueryentry).last().parent().remove()
+                var entry = "," + accname
+                var entry2 = "," + $(item).parent().prev().html()
+                $("#DebitsList").val( $("#DebitsList").val().replace(entry, ""))
+                $("#CreditsList").val( $("#CreditsList").val().replace(entry, ""))
+                $("#DebitsValues").val( $("#DebitsValues").val().replace(entry2, ""))
+                $("#CreditsValues").val( $("#CreditsValues").val().replace(entry2, ""))
+            }
+            function journalize() {
+               var debits = $("#DebitsList").val().substring(1)
+               var credits = $("#CreditsList").val().substring(1)
+               var debitsval = $("#DebitsValues").val().substring(1)
+               var creditsval = $("#CreditsValues").val().substring(1)
+                if (debits && credits && debitsval && creditsval) {
+                   $.ajax({
+                       url: "/ChartOfAccounts/Journalize",
+                       data: { credits: credits, debits: debits, creditsval: creditsval, debitsval: debitsval, isUpdate: updating, journalId: journalId  },
+                       success: function (result) {
+                           if (result.success == "1") {
+                               $("#modalAlertSuccess").addClass("alert-success")
+                               $("#modalAlertSuccess").removeClass("alert-danger")
+                               $("#modalAlertSuccess").html('<strong>Success!</strong> Journalizing transaction completed.')
+                               $('#myModal').modal("show");
+                               $("#DebitsList").val("");
+                               $("#CreditsList").val("");
+                               $("#DebitsValues").val("");
+                               $("#CreditsValues").val("");
+                               $("#CreditsPart").html("");
+                               $("#DebitsPart").html("");
+                               $("#DebitsNumber").val("0");
+                               $("#CreditsNumber").val("0");
+                           }
+                           else if (result.success == "-1") {
+                               $("#modalAlertSuccess").addClass("alert-danger")
+                               $("#modalAlertSuccess").removeClass("alert-success")
+                               $("#modalAlertSuccess").html('<strong>Error!</strong> Journalizing transaction incompleted. Make sure that total debit and credit values are equal.')
+                               $('#myModal').modal("show");
+                           }
+                       },
+                   });
+               }
+               else {
+                   $("#modalAlertSuccess").addClass("alert-danger")
+                   $("#modalAlertSuccess").removeClass("alert-success")
+                   $("#modalAlertSuccess").html('<strong>Error!</strong> Journalizing transaction incompleted. Make sure there it at least one account on debit and one account on credit.')
+                   $('#myModal').modal("show");
+                }
+            }
+        </script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.2/js/bootstrap-select.min.js"></script>
+        <script>
+            
+            $(function() {
+                $('.selectpicker').on('change', function(){
+                    var selected = $(this).find("option:selected").val();
+                    $.ajax({
+                        url: "/chartofaccounts/getdata",
+                        data: {accountname: selected},
+                        success: function(result){
+                            var isLeft = result.isLeftNormalSide;
+                            if(isLeft){
+                                $("#DebitInput").css("background-color", "#dff0d8")
+                                $("#CreditInput").css("background-color", "#f2dede")
+                            }
+                            else{
+                                $("#CreditInput").css("background-color", "#dff0d8")
+                                $("#DebitInput").css("background-color", "#f2dede")
+                            }
+                        }
+                    })
+                });
+            });
+        </script>
+    }
+
+}

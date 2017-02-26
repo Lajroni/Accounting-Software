@@ -1,0 +1,95 @@
+@model WebApplication1.Data.Models.AccountingViewModel.AvailableAccountsViewModel
+
+@{
+    ViewData["Title"] = "EditAccount";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2> Edit Account: @Html.Encode(Model.AccountName) </h2>
+<form asp-action="EditAccount">
+    <div class="form-horizontal">
+        <hr />
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <input type="hidden" asp-for="AccountName" />
+        <div class="form-group">
+            <label asp-for="AccountCode" class="col-md-2 control-label"></label>
+            <div class="col-md-10">
+                <input asp-for="AccountCode" class="form-control" />
+                <span asp-validation-for="AccountCode" class="text-danger" />
+            </div>
+        </div>
+        <div class="form-group">
+            <label asp-for="Category" class="col-md-2 control-label"></label>
+            <div class="col-md-10">
+                <select asp-for="Category" class="form-control">
+                    <option value="Asset">Asset</option>
+                    <option value="Liability">Liability</option>
+                    <option value="OwnersEquity">Owner's Equity</option>
+                    <option value="Revenue">Revenue</option>
+                    <option value="Expense">Expense</option>
+                </select>
+                <span asp-validation-for="Category" class="text-danger" />
+            </div>
+        </div>
+        <div class="form-group">
+            <label asp-for="Description" class="col-md-2 control-label"></label>
+            <div class="col-md-10">
+                <input asp-for="Description" class="form-control" />
+                <span asp-validation-for="Description" class="text-danger" />
+            </div>
+        </div>
+        <div class="form-group">
+            <label asp-for="Order" class="col-md-2 control-label"></label>
+            <div class="col-md-10">
+                <input asp-for="Order" class="form-control" />
+                <span asp-validation-for="Order" class="text-danger" />
+            </div>
+        </div>
+        <div class="form-group">
+            <label asp-for="SubCategory" class="col-md-2 control-label"></label>
+            <div class="col-md-10">
+                <select asp-for="SubCategory" class="form-control">
+                    <option class="cat1" value="CashRelated">Cash Related</option>
+                    <option class="cat1" value="Receivables">Receivables</option>
+                    <option class="cat1" value="Land">Land</option>
+                    <option class="cat1" value="Building">Building</option>
+                    <option class="cat1" value="Equipment">Equipment</option>
+                    <option class="cat2" value="EmployeePayable">Employee Payable</option>
+                    <option class="cat2" value="ShortTermPayable">Short-Term Payable</option>
+                    <option class="cat2" value="ShortTermPayable">Short-Term Payable</option>
+                    <option class="cat2" value="LongTermLiability">Long Term Liability</option>
+                    <option class="cat3" value="OwnersEquity">Owner's Equity</option>
+                    <option class="cat4" value="OperatingRevenue">Operating Revenue</option>
+                    <option class="cat4" value="OtherRevenue">Other Revenue</option>
+                    <option class="cat5" value="Purchase">Purchase</option>
+                    <option class="cat5" value="SellingExpense">Selling Expenses</option>
+                    <option class="cat5" value="GeneralExpense">General Expenses</option>
+                    <option class="cat5" value="OtherExpense">Other Expense</option>
+                    <option class="cat6" value="Inapplicable">Inapplicable</option>
+                </select>
+                <span asp-validation-for="SubCategory" class="text-danger" />
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-md-offset-2 col-md-10">
+                <div class="checkbox">
+                    <input asp-for="isLeftNormalSide" />
+                    <label asp-for="isLeftNormalSide"></label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-md-offset-2 col-md-10">
+                <input type="submit" value="Save" class="btn btn-default" />
+            </div>
+        </div>
+    </div>
+</form>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

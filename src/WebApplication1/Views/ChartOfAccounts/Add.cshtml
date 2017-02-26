@@ -1,0 +1,152 @@
+@model WebApplication1.Data.Models.AccountingViewModel.ChartOfAccountsViewModel
+
+@{
+    ViewData["Title"] = "Add";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .form-control{
+        float: right
+    }
+</style>
+<h2>Add</h2>
+
+<form asp-action="Add">
+    <div class="form-horizontal col-xs-6">
+        <h4>Enter your account details</h4>
+        <hr />
+
+        <div class="form-group">
+            <div class="col-md-10">
+                <label class="col-xs-4 control-label" for="AvailableAccounts"> Account Name: </label>
+                <div style="float:right">
+                    @Html.DropDownList("AvailableAccounts", (IEnumerable<SelectListItem>)ViewBag.AvailableAccounts, "Select Account Name")
+                </div>
+            </div>
+        </div>  
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <div class="form-group" style="display:none">
+            <div class="col-md-10">
+                <label asp-for="AccountName" class="col-md-2 control-label"></label>
+                <input asp-for="AccountName" class="form-control" />
+                <span asp-validation-for="AccountName" class="text-danger" />
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-md-10">
+                <label asp-for="Balance" class="col-xs-4 control-label"> Initial Balance: </label>
+                <input asp-for="Balance" class="form-control" />
+                <span asp-validation-for="Balance" class="text-danger" />
+            </div>
+        </div>
+        @*<div class="form-group">
+            <label asp-for="DateAdded" class="col-md-2 control-label"></label>
+            <div class="col-md-10">
+                <input asp-for="DateAdded" class="form-control" />
+                <span asp-validation-for="DateAdded" class="text-danger" />
+            </div>
+        </div>*@
+        <div class="form-group">
+            <div class="col-md-offset-2 col-md-10">
+                <input type="submit" value="Create" class="btn btn-default" />
+            </div>
+        </div>
+    </div>
+</form>
+<div class="col-xs-6">
+    <h4>Predefined details</h4>
+    <hr />
+    <div class="form-group">
+        <div class="col-md-10">
+            <label for="Category"> Category: </label>
+            <input id="Category" class="form-control" disabled />
+        </div>
+    </div>
+    <div class="form-group">
+        <div class="col-md-10">
+            <label for="SubCategory"> SubCategory: </label>
+            <input id="SubCategory" class="form-control" disabled />
+        </div>
+    </div>
+    <div class="form-group">
+        <div class="col-md-10">
+            <label for="isLeftNormalSide"> Normal Side:  </label>
+            <input id="isLeftNormalSide" class="form-control" disabled />
+        </div>
+    </div>
+    <div class="form-group">
+        <div class="col-md-10">
+            <label for="AccountCode"> Account Code: </label>
+            <input id="AccountCode" class="form-control" disabled />
+        </div>
+    </div>
+    <div class="form-group">
+        <div class="col-md-10">
+            <label for="Order"> Order: </label>
+            <input id="Order" class="form-control" disabled />
+        </div>
+    </div>
+    <div class="form-group">
+        <div class="col-md-10">
+            <label for="Description"> Description : </label>
+            <input id="Description" class="form-control" disabled />
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    <script src="~/lib/jquery/dist/jquery.js"></script>    
+    <script>
+        $("#AvailableAccounts").change(function () {
+            $.ajax({
+                url: '/ChartOfAccounts/GetData',
+                type: 'POST',
+                data: { AccountName: this.value },
+                success: function (data) {
+                    var json = JSON.parse(data)[0];                
+                    $("#AccountName").val(json.AccountName)
+                    $("#AccountCode").val(json.AccountCode);
+
+                    switch (json.Category) {
+                        case 1: $("#Category").val("Asset"); break;
+                        case 2: $("#Category").val("Liability"); break;
+                        case 3: $("#Category").val("Owner's Equity"); break;
+                        case 4: $("#Category").val("Revenue"); break;
+                        case 5: $("#Category").val("Expense"); break;
+                    }
+
+                    switch(json.SubCategory) {
+                        case 10: $("#SubCategory").val("Cash-Related"); break;
+                        case 12: $("#SubCategory").val("Receivable"); break;
+                        case 13: $("#SubCategory").val("Land"); break;
+                        case 14: $("#SubCategory").val("Building");break;
+                        case 15: $("#SubCategory").val("Equipment"); break;
+                        case 20: $("#SubCategory").val("Short-term Payable");break;
+                        case 21: $("#SubCategory").val("Employe Payable");break;
+                        case 22: $("#SubCategory").val("Long-term Liability"); break;
+                        case 30: $("#SubCategory").val("Owner's Equity"); break;
+                        case 40: $("#SubCategory").val("Operating Revenues"); break;
+                        case 41: $("#SubCategory").val("Other Revenues"); break;
+                        case 50: $("#SubCategory").val("Purchases"); break;
+                        case 51: $("#SubCategory").val("Selling Expense"); break;
+                        case 52: $("#SubCategory").val("General Expense"); break;
+                        case 53: $("#SubCategory").val("Other Expense"); break;
+                        case 100: $("#SubCategory").val("Inapplicable"); break;
+                    }
+
+                    $("#Order").val(json.Order);
+                    $("#Description").val(json.Description);
+                    if (json.isLeftNormalSide) {
+                        $("#isLeftNormalSide").val("Left");
+                    }
+                    else {
+                        $("#isLeftNormalSide").val("Right");
+                    }
+
+                }
+            });
+        })
+    </script>
+}}

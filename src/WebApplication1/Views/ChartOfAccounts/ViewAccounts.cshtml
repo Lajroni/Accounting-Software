@@ -1,0 +1,96 @@
+@{
+    ViewData["Title"] = "ViewAccounts";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.2/css/bootstrap-select.min.css">
+<style>
+    td{
+            border-right: 1px solid gray;
+    }
+</style>
+<h2>View Accounts</h2>
+
+<div>
+    <hr />
+    <table>
+        <tr style="border: 3px solid black;">
+            <td style="width: 150px; padding-left: 10px;">
+                <p> Account Name</p>
+            </td>
+            <td style="width: 150px; padding-left: 10px;">
+                <p> Initial Balance</p>
+            </td>
+            <td style="width: 200px; padding-left: 10px;">
+                <p> Added On</p>
+            </td>
+            <td style="width: 200px; padding-left: 10px;">
+                <p> Added By</p>
+            </td>
+            <td style="width: 150px; padding-left: 10px;">
+                <p> Active</p>
+            </td>
+            <td style="width: 150px; padding-left: 10px;">
+                <p> Toggle (De)Activation</p>
+            </td>
+        </tr>
+        @foreach (var model in ViewBag.Accounts.Items)
+        {
+        <tr style="border: 1px solid gray;">
+            <td style="width: 150px; padding-left: 10px;">
+                <a href="/chartofaccounts/accountdetails?accountname=@(model.AccountName)">  @Html.Encode(model.AccountName)  </a>
+            </td>
+            <td style="width: 150px; padding-left: 10px;">
+                @Html.Encode(model.InitialBalance)
+            </td>
+            <td style="width: 200px; padding-left: 10px;">
+                @Html.Encode(model.AddedOn.Date.ToString("d"))
+            </td>
+            <td style="width: 200px; padding-left: 10px;">
+                @Html.Encode(model.AddedBy)
+            </td>
+            <td style="width: 150px; padding-left: 10px;">
+                @Html.Encode(model.isActive)
+            </td>
+            <td style="width: 150px; padding-left: 10px;">
+                @Html.ActionLink("Change Activation", "ToggleActive", "ChartOfAccounts", new {id = model.AccountName })
+            </td>
+         </tr>
+        }
+    </table>
+
+</div>
+<div id="errorholder" class="error" style="display:none;">
+        <div class="alert alert-danger">
+            <strong>Error!</strong> This account has un-posted journals. You must post or delete them before deactivating an account.
+        </div>
+</div>
+
+
+@section Scripts {
+    @{
+        <script src="~/lib/jquery/dist/jquery.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.2/js/bootstrap-select.min.js"></script>
+        <script>
+            $(document).ready(function() {
+                var success = @((TempData["UnpostedJournals"] != null).ToString().ToLower());
+                    if (success == true) {
+                        $("#errorholder").css("display","block")
+                    }
+            });
+
+            $('#myModal').modal("show");
+            $("#AvailableAccounts").change(function () {
+                $.ajax({
+                    url: '/ChartOfAccounts/GetData',
+                    type: 'POST',
+                    data: { AccountName: this.value },
+                    success: function (data) { }
+                })
+            })
+           function toggleActivation(accname){
+               alert(accname)
+            
+            }
+      </script>
+}}
+

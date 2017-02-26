@@ -1,0 +1,79 @@
+@{
+    ViewData["Title"] = "ViewAvailableAccounts";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    td {
+        border-right: 1px solid gray;
+    }
+</style>
+
+<h2>View Available Accounts</h2>
+
+<div>
+    <hr />
+    <table>
+        <tr style="border: 3px solid black;">
+            <td style="width: 150px; padding-left: 10px;">
+                <p> Account Name</p>
+            </td>
+            <td style="width: 150px; padding-left: 10px;">
+                <p> Category</p>
+            </td>
+            <td style="width: 150px; padding-left: 10px;">
+                <p> SubCategory</p>
+            </td>
+            <td style="width: 150px; padding-left: 10px;">
+                <p> Account Code</p>
+            </td>
+            <td style="width: 150px; padding-left: 10px;">
+                <p> Order</p>
+            </td>
+            <td style="width: 150px; padding-left: 10px;">
+                <p> Description</p>
+            </td>
+            <td style="width: 150px; padding-left: 10px;">
+                <p> Normal Side</p>
+            </td>
+            <td style="width: 150px; padding-left: 10px;">
+                <p> Edit</p>
+            </td>
+        </tr>
+        @foreach (var model in ViewBag.Accounts.Items)
+        {
+            <tr style="border: 1px solid gray;">
+                <td style="width: 150px; padding-left: 10px;">
+                    @Html.Encode(model.AccountName)
+                </td>
+                <td style="width: 150px; padding-left: 10px;">
+                    @Html.Encode(model.Category)
+                </td>
+                <td style="width: 150px; padding-left: 10px;">
+                    @Html.Encode(model.SubCategory)
+                </td>
+                <td style="width: 150px; padding-left: 10px;">
+                    @Html.Encode(model.AccountCode)
+                </td>
+                <td style="width: 150px; padding-left: 10px;">
+                    @Html.Encode(model.Order)
+                </td>
+                <td style="width: 150px; padding-left: 10px;">
+                    @Html.Encode(model.Description)
+                </td>
+                <td style="width: 150px; padding-left: 10px;">
+                    @if (model.isLeftNormalSide)
+                    {
+                        <p>Left </p>
+                    }
+                    else{ 
+                        <p>Right</p>
+                    }
+                </td>
+                <td style="width: 150px; padding-left: 10px;">
+                    @Html.ActionLink("Edit", "EditAccount", "ChartOfAccounts", new { id = model.AccountName })
+                </td>
+            </tr>
+        }
+    </table>
+</div>
