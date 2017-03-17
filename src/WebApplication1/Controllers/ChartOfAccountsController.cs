@@ -20,6 +20,8 @@ using WebApplication1.Data.Models.AccountingViewModel;
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Data;
 using Newtonsoft.Json;
+using Microsoft.AspNetCore.Http;
+using System.IO;
 
 namespace WebApplication1.Controllers
 {
@@ -78,7 +80,7 @@ namespace WebApplication1.Controllers
                 EventLog log = new EventLog();
                 log.EditedBy = user.Email;
                 log.EditedOn = DateTime.Now;
-                log.Description = "The account with account name " + model.AccountName + " has been initialized with balance " + model.Balance;
+                log.Description = "Account  " + model.AccountName + " added to chart of accounts with balance " + model.Balance;
                 DbContext.EventLog.Add(log);
                 DbContext.Entry(log).State = EntityState.Added;
                 await DbContext.SaveChangesAsync();
@@ -113,7 +115,7 @@ namespace WebApplication1.Controllers
                 await DbContext.SaveChangesAsync();
                 EventLog log = new EventLog();
                 log.EditedBy = user.Email;
-                log.Description = "The available account with account name " + model.AccountName + " has been created";
+                log.Description = "Account " + model.AccountName + " created";
                 log.EditedOn = DateTime.Now;
                 DbContext.EventLog.Add(log);
                 DbContext.Entry(log).State = EntityState.Added;
@@ -145,7 +147,7 @@ namespace WebApplication1.Controllers
             {
                 return RedirectToAction(nameof(AccountController.Login), "Account");
             }
-            var accs2 = DbContext.AvailableAccounts.OrderBy(c => c.Order).ToList();
+            var accs2 = DbContext.AvailableAccounts.OrderBy(c => c.AccountCode).ToList();
             ViewData["Accounts"] = new SelectList(accs2);
             return View();
         }
@@ -159,6 +161,12 @@ namespace WebApplication1.Controllers
                 return RedirectToAction(nameof(AccountController.Login), "Account");
             }
             var acc = DbContext.AvailableAccounts.Where(x => x.AccountName == id).FirstOrDefault();
+            var count = DbContext.ChartOfAccounts.Where(x => x.AccountName == id).Count();
+            if (count > 0)
+            {
+                TempData["CannotEdit"] = "1";
+                return RedirectToAction(nameof(ChartOfAccountsController.ViewAvailableAccounts), "ChartOfAccounts");
+            }
             return View(acc);
         }
 
@@ -178,7 +186,7 @@ namespace WebApplication1.Controllers
             EventLog log = new EventLog();
             log.EditedBy = user.Email;
             log.EditedOn = DateTime.Now;
-            log.Description = "The available account with account name " + model.AccountName + " has been edited";
+            log.Description = "Account in CoA " + model.AccountName + " edited";
             DbContext.EventLog.Add(log);
             DbContext.Entry(log).State = EntityState.Added;
             await DbContext.SaveChangesAsync();
@@ -194,10 +202,13 @@ namespace WebApplication1.Controllers
                 var transactions = DbContext.Transactions.Where(x => x.JournalId == journal.Id);
                 ViewData["transactions"] = new List<Transactions>(transactions);
                 ViewData["JournalId"] = journal.Id;
-                if(viewonly == true)
+                ViewData["Date"] = journal.AddedOn;
+                ViewData["hasID"] = true;
+                if (viewonly == true || journal.isPosted)
                 {
                     ViewData["ViewOnly"] = true;
-                }else
+                }
+                else
                 {
                     ViewData["ViewOnly"] = false;
                 }
@@ -206,8 +217,8 @@ namespace WebApplication1.Controllers
             {
                 ViewData["ViewOnly"] = false;
                 ViewData["transactions"] = "null";
-            }            
-            
+            }
+
 
             List<string> accs2 = DbContext.AvailableAccounts.Where(c => DbContext.ChartOfAccounts.Where(d => d.isActive == true).Select(b => b.AccountName).Contains(c.AccountName)).Where(c => c.isLeftNormalSide == true).Select(x => x.AccountName).ToList();
             IEnumerable<string> accs = accs2 as IEnumerable<string>;
@@ -218,6 +229,7 @@ namespace WebApplication1.Controllers
             List<string> accs6 = DbContext.AvailableAccounts.Where(c => DbContext.ChartOfAccounts.Where(d => d.isActive == true).Select(b => b.AccountName).Contains(c.AccountName)).Select(x => x.AccountName).ToList();
             IEnumerable<string> accs5 = accs6 as IEnumerable<string>;
             ViewData["Accounts"] = new SelectList(accs5);
+            ViewData["Files"] = DbContext.FileData.Where(x => x.journalId == journalid);
             if (DbContext.ChartOfAccounts.Where(d => d.isActive == false).Count() > 0)
             {
                 ViewData["Inactive"] = "1";
@@ -227,7 +239,7 @@ namespace WebApplication1.Controllers
 
 
         [HttpGet]
-        public async Task<IActionResult> Journalize([FromQuery]string journalid)
+        public async Task<IActionResult> Journalize([FromQuery]string journalid, ICollection<IFormFile> files)
         {
             var user = await GetCurrentUserAsync();
             if (user == null)
@@ -244,24 +256,34 @@ namespace WebApplication1.Controllers
             var success = "1";
             if (sum == sum2)
             {
-                if(Request.Query["isUpdate"].ToString().ToLower() == "true")
+                JournalizingViewModel model;
+                if (Request.Query["isUpdate"].ToString().ToLower() == "true")
                 {
                     var journalID = Request.Query["journalId"].ToString().ToLower();
+                    journalid = journalID;
                     DbContext.Transactions.RemoveRange(DbContext.Transactions.Where(x => x.JournalId == Convert.ToInt32(journalID)));
-                    DbContext.Journals.RemoveRange(DbContext.Journals.Where(x => x.Id == Convert.ToInt32(journalID)));
+                    model = DbContext.Journals.Where(x => x.Id == Convert.ToInt32(journalID)).FirstOrDefault();
+                    model.isPosted = false;
+                    model.isApproved = false;
+                    model.isRejected = false;
+                    model.isSubmited = true;
+                    DbContext.Entry(model).State = EntityState.Modified;
                 }
-                JournalizingViewModel model = new JournalizingViewModel();
-                model.AddedBy = user.Email;
-                model.AddedOn = DateTime.Now;
-                model.isPosted = false;
-                model.isApproved = false;
-                model.isRejected = false;
-                model.isSubmited = true;
+                else
+                {
+                    model = new JournalizingViewModel();
+                    model.AddedBy = user.Email;
+                    model.AddedOn = DateTime.Now;
+                    model.isPosted = false;
+                    model.isApproved = false;
+                    model.isRejected = false;
+                    model.isSubmited = true;
+                    var addedAccount = DbContext.Journals.Add(model);
+                    DbContext.Entry(model).State = EntityState.Added;
+                }
 
-                var addedAccount = DbContext.Journals.Add(model);
-                DbContext.Entry(model).State = EntityState.Added;
                 await DbContext.SaveChangesAsync();
-                
+
                 using (var e1 = debits.GetEnumerator())
                 using (var e2 = debitsval.GetEnumerator())
                 {
@@ -275,13 +297,14 @@ namespace WebApplication1.Controllers
                         transaction.isDebit = true;
                         transaction.JournalId = model.Id;
                         transaction.Value = item2;
+                        transaction.AddedOn = DateTime.Now;
                         DbContext.Transactions.Add(transaction);
                         DbContext.Entry(transaction).State = EntityState.Added;
 
                         EventLog trans = new EventLog();
                         trans.EditedBy = user.Email;
                         trans.EditedOn = DateTime.Now;
-                        trans.Description = "The transaction with ID " + transaction.Id + " has been created";
+                        trans.Description = "TransactionID " + transaction.Id + " created";
                         DbContext.EventLog.Add(trans);
                         DbContext.Entry(trans).State = EntityState.Added;
 
@@ -301,13 +324,14 @@ namespace WebApplication1.Controllers
                         transaction.isDebit = false;
                         transaction.JournalId = model.Id;
                         transaction.Value = item2;
+                        transaction.AddedOn = DateTime.Now;
                         DbContext.Transactions.Add(transaction);
                         DbContext.Entry(transaction).State = EntityState.Added;
 
                         EventLog trans = new EventLog();
                         trans.EditedBy = user.Email;
                         trans.EditedOn = DateTime.Now;
-                        trans.Description = "The transaction with ID " + transaction.Id + " has been created";
+                        trans.Description = "TransactionID " + transaction.Id + " created";
                         DbContext.EventLog.Add(trans);
                         DbContext.Entry(trans).State = EntityState.Added;
 
@@ -317,7 +341,7 @@ namespace WebApplication1.Controllers
                 EventLog log = new EventLog();
                 log.EditedBy = user.Email;
                 log.EditedOn = DateTime.Now;
-                log.Description = "The journal with ID " + model.Id + " has been created";
+                log.Description = "JournalID " + model.Id + " created";
                 DbContext.EventLog.Add(log);
                 DbContext.Entry(log).State = EntityState.Added;
                 await DbContext.SaveChangesAsync();
@@ -327,6 +351,7 @@ namespace WebApplication1.Controllers
             {
                 success = "-1";
             }
+
             return Json(new { success = success });
         }
 
@@ -348,16 +373,17 @@ namespace WebApplication1.Controllers
                     List<Transactions> transactions = DbContext.Transactions.Where(c => c.JournalId == id).ToList();
                     using (var e2 = transactions.GetEnumerator())
                     {
-                        while (e2.MoveNext()) {
+                        while (e2.MoveNext())
+                        {
                             var iteminside = e2.Current;
                             var orig = DbContext.ChartOfAccounts.Where(c => c.AccountName == iteminside.AccountName).FirstOrDefault();
                             if (orig != null)
                             {
                                 if (iteminside.isDebit == DbContext.AvailableAccounts.Where(x => x.AccountName == orig.AccountName).FirstOrDefault().isLeftNormalSide)
-                                {orig.Balance = orig.Balance + iteminside.Value;}
+                                { orig.Balance = orig.Balance + iteminside.Value; }
                                 else
-                                {orig.Balance = orig.Balance - iteminside.Value;}
-                                
+                                { orig.Balance = orig.Balance - iteminside.Value; }
+
                                 await DbContext.SaveChangesAsync();
                             }
                         }
@@ -369,17 +395,17 @@ namespace WebApplication1.Controllers
                     EventLog log = new EventLog();
                     log.EditedBy = user.Email;
                     log.EditedOn = DateTime.Now;
-                    log.Description = "The journal with ID " + item.Id  + " has been posted";
+                    log.Description = "JournallD " + item.Id + " posted";
                     DbContext.EventLog.Add(log);
                     DbContext.Entry(log).State = EntityState.Added;
                     await DbContext.SaveChangesAsync();
                 }
             }
-                    return RedirectToAction(nameof(ChartOfAccountsController.ViewAccounts), "ChartOfAccounts");
+            return RedirectToAction(nameof(ChartOfAccountsController.ViewAccounts), "ChartOfAccounts");
         }
 
         [HttpGet]
-        public async Task<IActionResult> ViewJournals([FromQuery]string page = "0", [FromQuery]string posted = "false")  
+        public async Task<IActionResult> ViewJournals(Filter filter, [FromQuery]string page = "0", string sortOrder = "", [FromQuery]string posted = "false", [FromQuery]string JournalID = null, [FromQuery]string AccountName = null, [FromQuery]string DebitValue = null, [FromQuery]string CreditValue = null, [FromQuery]string Status = null)
         {
             var user = await GetCurrentUserAsync();
             if (user == null)
@@ -390,17 +416,89 @@ namespace WebApplication1.Controllers
             //IEnumerable<string> accs5 = tranasctions as IEnumerable<string>;
             //ViewData["Transactinos"] = new SelectList(accs5);
             int pagen = Convert.ToInt32(page);
-            var journals = DbContext.Journals.Where(x => posted == "true" ? x.isPosted == true : x.isPosted == false).OrderBy(y => y.AddedOn).Skip((10 * pagen)).Take(10);
+            if (Status != null) { filter.Status = Status; }
+            if (JournalID != null) { filter.JournalID = JournalID; }
+            if (DebitValue != null) { filter.DebitValue = DebitValue; }
+            if (CreditValue != null) { filter.CreditValue = CreditValue; }
+            if (Status != null) { filter.Status = Status; }
+            if (filter.Status == "Posted")
+            {
+                posted = "true";
+            }
+            var journalsinit = DbContext.Journals.Where(x => posted == "true" ? x.isPosted == true : x.isPosted == false);
+            if (filter.JournalID != null)
+            {
+                journalsinit = journalsinit.Where(y => y.Id == Convert.ToInt32(filter.JournalID));
+            }
+            if (filter.Status != null)
+            {
+                switch (filter.Status)
+                {
+                    case "Posted": journalsinit = journalsinit.Where(z => z.isPosted == true); break;
+                    case "Rejected": journalsinit = journalsinit.Where(z => z.isRejected == true); break;
+                    case "Submitted": journalsinit = journalsinit.Where(z => z.isSubmited == true && z.isPosted == false); break;
+                }
+            }
+            if (filter.AccountName != null && filter.CreditValue != null && filter.DebitValue == null)
+            {
+                journalsinit = journalsinit.Where(k => DbContext.Transactions.Any(v => v.isDebit == false && v.AccountName == filter.AccountName && v.Value == Convert.ToDouble(filter.CreditValue) && v.JournalId == k.Id));
+            }
+            else if (filter.AccountName != null && filter.CreditValue == null && filter.DebitValue != null)
+            {
+                journalsinit = journalsinit.Where(k => DbContext.Transactions.Any(v => v.isDebit == true && v.AccountName == filter.AccountName && v.Value == Convert.ToDouble(filter.DebitValue) && v.JournalId == k.Id));
+
+            }
+            else
+            {
+                if (filter.AccountName != null)
+                {
+                    journalsinit = journalsinit.Where(k => DbContext.Transactions.Any(v => v.AccountName == filter.AccountName && v.JournalId == k.Id));
+                }
+                if (filter.CreditValue != null)
+                {
+                    journalsinit = journalsinit.Where(k => DbContext.Transactions.Any(v => v.isDebit == false && v.Value == Convert.ToDouble(filter.CreditValue) && v.JournalId == k.Id));
+                }
+                if (filter.DebitValue != null)
+                {
+                    journalsinit = journalsinit.Where(k => DbContext.Transactions.Any(v => v.isDebit == true && v.Value == Convert.ToDouble(filter.DebitValue) && v.JournalId == k.Id));
+                }
+            }
+            var journals = journalsinit.OrderBy(y => y.AddedOn).Skip((10 * pagen)).Take(10);
+            ViewBag.JournalIDSortParm = String.IsNullOrEmpty(sortOrder) ? "name_desc" : "";
+            ViewBag.DateSortParm = sortOrder == "Date" ? "date_desc" : "Date";
+            if (sortOrder == "name_desc")
+            {
+                journals = journals.OrderByDescending(x => x.Id);
+            }
+            switch (sortOrder)
+            {
+                case "name_desc":
+                    journals = journals.OrderByDescending(x => x.Id);
+                    break;
+                case "Date":
+                    journals = journals.OrderBy(x => x.AddedOn);
+                    break;
+                case "date_desc":
+                    journals = journals.OrderByDescending(x => x.AddedOn);
+                    break;
+                default:
+                    journals = journals.OrderBy(x => x.Id);
+                    break;
+            }
             var listval = new List<double>();
             var list = new List<SelectList>();
             var listdates = new List<string>();
             var listsubmitted = new List<int>();
             var listredgreen = new List<bool>();
+            var listreasons = new List<string>();
+            var listfiles = new List<int>();
             foreach (var item in journals)
             {
+                listfiles.Add(DbContext.FileData.Where(x => x.journalId == item.Id + "").Count());
+                listreasons.Add(item.reason);
                 listdates.Add(item.AddedOn.ToString());
                 var transactions = DbContext.Transactions.Where(x => x.JournalId == item.Id);
-                if(item != null)
+                if (item != null)
                 {
                     list.Add(new SelectList(transactions));
                 }
@@ -416,7 +514,7 @@ namespace WebApplication1.Controllers
                     {
                         credit += iteminside.Value;
                     }
-                    if(iteminside.isDebit == DbContext.AvailableAccounts.Where(z => z.AccountName == iteminside.AccountName).FirstOrDefault().isLeftNormalSide)
+                    if (iteminside.isDebit == DbContext.AvailableAccounts.Where(z => z.AccountName == iteminside.AccountName).FirstOrDefault().isLeftNormalSide)
                     {
                         listredgreen.Add(true);
                     }
@@ -425,10 +523,12 @@ namespace WebApplication1.Controllers
                         listredgreen.Add(false);
                     }
                 }
-                if (item.isApproved){
+                if (item.isApproved)
+                {
                     listsubmitted.Add(4);
                 }
-                else if(item.isRejected){
+                else if (item.isRejected)
+                {
                     listsubmitted.Add(3);
                 }
                 else if (item.isSubmited)
@@ -442,18 +542,25 @@ namespace WebApplication1.Controllers
                 listval.Add(debit);
                 listval.Add(credit);
             }
+            ViewBag.Files = DbContext.FileData.ToList();
+            List<string> accs6 = DbContext.AvailableAccounts.Where(c => DbContext.ChartOfAccounts.Where(d => d.isActive == true).Select(b => b.AccountName).Contains(c.AccountName)).Select(x => x.AccountName).ToList();
+            IEnumerable<string> accs5 = accs6 as IEnumerable<string>;
+            ViewData["AccountName"] = new SelectList(accs5);
+            ViewData["FilesCount"] = listfiles;
             ViewData["UserType"] = user.isManager ? 1 : (user.isAdmin ? 2 : 0);
             ViewData["Color"] = listredgreen;
             ViewData["Dates"] = listdates;
             ViewData["Submit"] = listsubmitted;
             ViewData["Totals"] = listval;
             ViewData["Transactions"] = list;
+            ViewData["Query"] = "&Status=" + filter.Status + "&CreditValue=" + filter.CreditValue + "&DebitValue=" + filter.DebitValue + "&AccountName=" + filter.AccountName + "&JournalID=" + filter.JournalID + "&";
+            ViewData["Reasons"] = listreasons;
             ViewData["PostedOnly"] = (posted.ToLower() == "true");
-            if (DbContext.Journals.Where(x => x.isPosted == false).Skip((10 * (pagen))).Count() > 10)
+            if (journalsinit.Skip((10 * (pagen))).Count() > 10)
             {
                 ViewData["NextPage"] = pagen + 1;
             }
-            if(pagen > 0)
+            if (pagen > 0)
             {
                 ViewData["PrevPage"] = pagen - 1;
             }
@@ -467,7 +574,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpGet]
-        public async Task <IActionResult> post([FromQuery]string journalid, [FromQuery]string all, string returnUrl = null)
+        public async Task<IActionResult> post([FromQuery]string journalid, [FromQuery]string all, string returnUrl = null)
         {
             var user = await GetCurrentUserAsync();
             if (user == null)
@@ -476,7 +583,7 @@ namespace WebApplication1.Controllers
             }
             var journals = DbContext.Journals.Where(x => all == null ? x.Id == Convert.ToInt32(journalid) : x.isPosted == false);
 
-            foreach(var journal in journals)
+            foreach (var journal in journals)
             {
                 journal.isApproved = true;
                 journal.isPosted = true;
@@ -485,7 +592,8 @@ namespace WebApplication1.Controllers
                 EventLog log = new EventLog();
                 log.EditedBy = user.Email;
                 log.EditedOn = DateTime.Now;
-                log.Description = "The journal with ID " + journal.Id + " has been posted";
+                log.Description = "JournalID " + journal.Id + " posted";
+                DbContext.Entry(log).State = EntityState.Added;
                 foreach (var transaction in DbContext.Transactions.Where(x => x.JournalId == journal.Id))
                 {
                     var acc = DbContext.ChartOfAccounts.Where(y => y.AccountName == transaction.AccountName).FirstOrDefault();
@@ -506,7 +614,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> reject([FromQuery]string journalid, string returnUrl = null)
+        public async Task<IActionResult> reject([FromQuery]string journalid, [FromQuery]string reason = "empty", string returnUrl = null)
         {
             var user = await GetCurrentUserAsync();
             if (user == null)
@@ -518,15 +626,19 @@ namespace WebApplication1.Controllers
             journals.isPosted = false;
             journals.isRejected = true;
             journals.isSubmited = false;
+            if (reason != "empty")
+            {
+                journals.reason = reason;
+            }
             EventLog log = new EventLog();
             log.EditedBy = user.Email;
             log.EditedOn = DateTime.Now;
-            log.Description = "The journal with ID " + journals.Id + " has been rejected";
+            log.Description = "JournalID " + journals.Id + " rejected";
             DbContext.EventLog.Add(log);
             DbContext.Entry(log).State = EntityState.Added;
 
             await DbContext.SaveChangesAsync();
-            return RedirectToAction(nameof(ChartOfAccountsController.ViewJournals), "ChartOfAccounts");
+            return RedirectToAction(nameof(ChartOfAccountsController.ViewJournals), "ChartOfAccounts", new { Status = "Submitted"});
         }
 
         [HttpGet]
@@ -537,12 +649,12 @@ namespace WebApplication1.Controllers
             {
                 return RedirectToAction(nameof(AccountController.Login), "Account");
             }
-            var journals = DbContext.Journals.Where(x => x.Id == Convert.ToInt32(journalid)).FirstOrDefault();
+            DbContext.Journals.RemoveRange(DbContext.Journals.Where(x => x.Id == Convert.ToInt32(journalid)));
             EventLog log = new EventLog();
             log.EditedBy = user.Email;
             log.EditedOn = DateTime.Now;
-            log.Description = "The journal with ID " + journals.Id + " has been deleted";
-            DbContext.Journals.Remove(journals);
+            log.Description = "JournalID " + journalid + " deleted";
+            DbContext.Entry(log).State = EntityState.Added;
             await DbContext.SaveChangesAsync();
             return RedirectToAction(nameof(ChartOfAccountsController.ViewJournals), "ChartOfAccounts");
         }
@@ -555,25 +667,221 @@ namespace WebApplication1.Controllers
             {
                 return RedirectToAction(nameof(AccountController.Login), "Account");
             }
-            
-            var journals = DbContext.Journals.Where(x => journalid == null ? x.isSubmited == false: x.Id == Convert.ToInt32(journalid));
+
+            var journals = DbContext.Journals.Where(x => journalid == null ? x.isSubmited == false : x.Id == Convert.ToInt32(journalid));
             foreach (var item in journals)
             {
                 item.isSubmited = true;
                 item.isApproved = false;
                 item.isPosted = false;
+                item.reason = "empty";
                 item.isRejected = false; ;
                 EventLog log = new EventLog();
                 log.EditedBy = user.Email;
                 log.EditedOn = DateTime.Now;
-                log.Description = "The journal with ID " + item.Id + " has been submitted";
+                log.Description = "JournalID " + item.Id + " submitted";
+                DbContext.Entry(log).State = EntityState.Added;
             }
             await DbContext.SaveChangesAsync();
             return RedirectToAction(nameof(ChartOfAccountsController.ViewJournals), "ChartOfAccounts");
         }
 
         [HttpGet]
-        public IActionResult eventlog(string returnUrl = null) {
+        public async Task<IActionResult> TrialBalance(string returnUrl = null)
+        {
+            var user = await GetCurrentUserAsync();
+            if (user == null)
+            {
+                return RedirectToAction(nameof(AccountController.Login), "Account");
+            }
+            var listval = new List<double>();
+            var listacc = new List<string>();
+            var listside = new List<bool>();
+            var listparenthesis = new List<bool>();
+            var accounts = DbContext.ChartOfAccounts.OrderBy(x => x.Order);
+            var debitval = 0.0;
+            var creditval = 0.0;
+            var listdebcred = new List<double>();
+            foreach (var account in accounts)
+            {
+                var accdetails = DbContext.AvailableAccounts.OrderBy(x => x.AccountCode).Where(x => x.AccountName == account.AccountName).FirstOrDefault();
+                if (account.Balance == 0)
+                    continue;
+                listacc.Add(account.AccountName);
+                listval.Add(Math.Abs(account.Balance));
+                if (accdetails.isLeftNormalSide)
+                {
+                    listside.Add(true);
+                    debitval += account.Balance;
+                }
+                else
+                {
+                    listside.Add(false);
+                    creditval += account.Balance;
+                }
+                if (account.Balance > 0)
+                {
+                    listparenthesis.Add(false);
+                }
+                else
+                {
+                    listparenthesis.Add(true);
+                }
+            }
+            EventLog trans = new EventLog();
+            trans.EditedBy = user.Email;
+            trans.EditedOn = DateTime.Now;
+            trans.Description = "Trial Balance computed for the period";
+            DbContext.Entry(trans).State = EntityState.Added;
+            listdebcred.Add(debitval);
+            listdebcred.Add(creditval);
+            ViewData["Accounts"] = listacc;
+            ViewData["Values"] = listval;
+            ViewData["Sides"] = listside;
+            ViewData["Sum"] = listdebcred;
+            ViewData["Parenthesis"] = listparenthesis;
+            return View();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> IncomeStatement(string returnUrl = null)
+        {
+            var user = await GetCurrentUserAsync();
+            if (user == null)
+            {
+                return RedirectToAction(nameof(AccountController.Login), "Account");
+            }
+            var RevenueAccs = DbContext.ChartOfAccounts.Where(x => DbContext.AvailableAccounts.OrderBy(y => y.AccountCode).Any(v => v.Category == "Revenue" && v.AccountName == x.AccountName) && x.Balance != 0);
+            var ExpenseAccs = DbContext.ChartOfAccounts.Where(x => DbContext.AvailableAccounts.OrderBy(y => y.AccountCode).Any(v => v.Category == "Expense" && v.AccountName == x.AccountName) && x.Balance != 0);
+            var totalExp = 0.00;
+            var totalRev = 0.00;
+            foreach (var item in RevenueAccs)
+            {
+                totalRev += item.Balance;
+            }
+            foreach (var item in ExpenseAccs)
+            {
+                totalExp += item.Balance;
+            }
+            ViewData["TotalRev"] = totalRev;
+            ViewData["TotalExp"] = totalExp;
+            ViewData["NetProfit"] = (totalRev - totalExp);
+            ViewData["RevenueAccs"] = RevenueAccs;
+            ViewData["ExpenseAccs"] = ExpenseAccs;
+            return View();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> BalanceSheet(string returnUrl = null)
+        {
+            var user = await GetCurrentUserAsync();
+            if (user == null)
+            {
+                return RedirectToAction(nameof(AccountController.Login), "Account");
+            }
+            var CurrentLiabilityAccs = DbContext.ChartOfAccounts.Where(x => DbContext.AvailableAccounts.OrderBy(y => y.AccountCode).Any(v => v.Category == "Liability" && v.AccountName == x.AccountName && (v.SubCategory == "ShortTermPayable" || v.SubCategory == "EmployeePayable" || v.SubCategory == "EmployerPayable" || v.SubCategory == "SalesTax")) && x.Balance != 0);
+            var LongTermLiabilityAccs = DbContext.ChartOfAccounts.Where(x => DbContext.AvailableAccounts.OrderBy(y => y.AccountCode).Any(v => v.Category == "Liability" && v.AccountName == x.AccountName && (v.SubCategory == "DeferredRevenuesAndCurrentPortionLongTermDebt" || v.SubCategory == "LongTermLiabilities")) && x.Balance != 0);
+            var CurrentAssetAccs = DbContext.ChartOfAccounts.Where(x => DbContext.AvailableAccounts.OrderBy(y => y.AccountCode).Any(v => v.Category == "Asset" && v.AccountName == x.AccountName && (v.SubCategory == "CashRelated" || v.SubCategory == "Receivables" || v.SubCategory == "Inventories" || v.SubCategory == "PrepaidItems")) && x.Balance != 0);
+            var LongTermAssetAccs = DbContext.ChartOfAccounts.Where(x => DbContext.AvailableAccounts.OrderBy(y => y.AccountCode).Any(v => v.Category == "Asset" && v.AccountName == x.AccountName && (v.SubCategory != "CashRelated" && v.SubCategory != "Receivables" && v.SubCategory != "Inventories" && v.SubCategory != "PrepaidItems")) && x.Balance != 0);
+
+            //            < option class="cat1 opt0 opt" value="CashRelated">Cash Related</option>
+            //<option class="cat1 opt1 opt" value="Receivables">Receivables</option>
+            //<option class="cat1 opt2 opt" value="Inventories">Inventories</option>
+            //<option class="cat1 opt3 opt" value="PrepaidItems">PrepaidItems</option>
+            //<option class="cat1 opt4 opt" value="LongTermInvestments">LongTermInvestments</option>
+            //<option class="cat1 opt5 opt" value="Land">Land</option>
+            //<option class="cat1 opt6 opt" value="Building">Building</option>
+            //<option class="cat1 opt7 opt" value="Equipment">Equipment</option>
+            //<option class="cat1 opt8 opt" value="Intangibles">Intangibles</option>
+            var totalCurrentAsset = 0.00;
+            var totalLongTermAsset = 0.00;
+            var totalCurrentLiability = 0.00;
+            var totalLongTermLiability = 0.00;
+            foreach (var item in CurrentAssetAccs)
+            {
+                totalCurrentAsset += item.Balance;
+            }
+            foreach (var item in LongTermAssetAccs)
+            {
+                totalLongTermAsset += item.Balance;
+            }
+            foreach (var item in CurrentLiabilityAccs)
+            {
+                totalCurrentLiability += item.Balance;
+            }
+            foreach (var item in LongTermLiabilityAccs)
+            {
+                totalLongTermLiability += item.Balance;
+            }
+            ViewData["TotalCurrentAsset"] = totalCurrentAsset;
+            ViewData["TotalLongTermAsset"] = totalLongTermAsset;
+            ViewData["TotalCurrentLiablity"] = totalCurrentLiability;
+            ViewData["TotalLongTermLiability"] = totalLongTermLiability;
+            ViewData["TotalAsset"] = totalCurrentAsset + totalLongTermAsset;
+            ViewData["TotalLiability"] = totalCurrentLiability + totalLongTermLiability;
+            ViewData["CurrentAssetAccs"] = CurrentAssetAccs;
+            ViewData["LongTermAssetAccs"] = LongTermAssetAccs;
+            ViewData["CurrentLiabilityAccs"] = CurrentLiabilityAccs;
+            ViewData["LongTermLiabilityAccs"] = LongTermLiabilityAccs;
+            return View();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> RetainedEarningsStatement(string returnUrl = null)
+        {
+            var user = await GetCurrentUserAsync();
+            if (user == null)
+            {
+                return RedirectToAction(nameof(AccountController.Login), "Account");
+            }
+            var RevenueAccs = DbContext.ChartOfAccounts.Where(x => DbContext.AvailableAccounts.OrderBy(y => y.AccountCode).Any(v => v.Category == "Revenue" && v.AccountName == x.AccountName) && x.Balance != 0);
+            var ExpenseAccs = DbContext.ChartOfAccounts.Where(x => DbContext.AvailableAccounts.OrderBy(y => y.AccountCode).Any(v => v.Category == "Expense" && v.AccountName == x.AccountName) && x.Balance != 0);
+            var totalExp = 0.00;
+            var totalRev = 0.00;
+            foreach (var item in RevenueAccs)
+            {
+                totalRev += item.Balance;
+            }
+            foreach (var item in ExpenseAccs)
+            {
+                totalExp += item.Balance;
+            }
+            var NetIncome = (totalRev - totalExp);
+            var OwnersEquity = DbContext.ChartOfAccounts.Where(x => x.AccountName == "Owner's Equity").FirstOrDefault();
+            var OwnersEquityAccs = DbContext.ChartOfAccounts.Where(x => DbContext.AvailableAccounts.OrderBy(y => y.AccountCode).Any(v => v.Category == "OwnersEquity" && v.AccountName == x.AccountName) && x.Balance != 0);
+            ViewData["OwnersEquityAcc"] = OwnersEquity;
+            var listplusminus = new List<bool>();
+            var OEFinal = OwnersEquity.InitialBalance;
+            var listAdd = new List<ChartOfAccountsViewModel>();
+            var listLess = new List<ChartOfAccountsViewModel>();
+            foreach (var acc in OwnersEquityAccs)
+            {
+                var accdet = DbContext.AvailableAccounts.Where(x => x.AccountName == acc.AccountName).FirstOrDefault();
+                if (accdet.isLeftNormalSide)
+                {
+                    listLess.Add(acc);
+                    listplusminus.Add(false);
+                    OEFinal -= acc.Balance;
+                }
+                else
+                {
+                    listAdd.Add(acc);
+                    listplusminus.Add(true);
+                    OEFinal += acc.Balance;
+                }
+            }
+            OEFinal += NetIncome;
+            ViewData["OwnersEquityAccs"] = OwnersEquityAccs;
+            ViewData["AccsLess"] = listLess;
+            ViewData["AccsAdd"] = listAdd;
+            ViewData["side"] = listplusminus;
+            ViewData["NetIncome"] = NetIncome;
+            ViewData["OEFinal"] = OEFinal;
+            return View();
+        }
+        [HttpGet]
+        public IActionResult eventlog(string returnUrl = null)
+        {
             var logs = DbContext.EventLog.OrderByDescending(x => x.EditedOn).ToList();
             ViewData["EventLogs"] = new SelectList(logs);
             return View();
@@ -584,7 +892,7 @@ namespace WebApplication1.Controllers
             var edit = Microsoft.AspNetCore.Http.Extensions.UriHelper.GetDisplayUrl(Request).Split('/')[Microsoft.AspNetCore.Http.Extensions.UriHelper.GetDisplayUrl(Request).Split('/').Length - 1];
             var acc = DbContext.ChartOfAccounts.Where(x => x.AccountName == edit).FirstOrDefault();
             var transactions = DbContext.Transactions.Where(x => x.AccountName == acc.AccountName).Count();
-            var user = await GetCurrentUserAsync(); 
+            var user = await GetCurrentUserAsync();
             if (user == null)
             {
                 return RedirectToAction(nameof(AccountController.Login), "Account");
@@ -597,12 +905,12 @@ namespace WebApplication1.Controllers
                 EventLog log = new EventLog();
                 log.EditedBy = user.Email;
                 log.EditedOn = DateTime.Now;
-                log.Description = "The account with name " + model.AccountName + " has been " + (acc.isActive ? "activated": "deactivated");
+                log.Description = "Account " + model.AccountName + " " + (acc.isActive ? "activated" : "deactivated");
                 DbContext.EventLog.Add(log);
                 DbContext.Entry(log).State = EntityState.Added;
                 await DbContext.SaveChangesAsync();
-            }    
-            else if( transactions > 0)
+            }
+            else if (transactions > 0)
             {
                 TempData["UnpostedJournals"] = "1";
                 return RedirectToAction(nameof(ChartOfAccountsController.ViewAccounts), "ChartOfAccounts");
@@ -627,8 +935,8 @@ namespace WebApplication1.Controllers
             listCumulative.Add(account.InitialBalance);
             var listredgreen = new List<bool>();
             var transactions = DbContext.Transactions.Where(x => x.AccountName == accountname);
-            var transactions2 = DbContext.Transactions.Join(DbContext.Journals, c => c.JournalId, d => d.Id, (c, d) => new JoinedJournalTransaction { AccountName = c.AccountName, isPosted = d.isPosted, JournalId = c.JournalId, isDebit = c.isDebit, Value = c.Value, AddedOn = c.AddedOn}).Where(v => v.isPosted == true && v.AccountName == accountname);
-            foreach(var item in transactions2)
+            var transactions2 = DbContext.Transactions.Join(DbContext.Journals, c => c.JournalId, d => d.Id, (c, d) => new JoinedJournalTransaction { AccountName = c.AccountName, isPosted = d.isPosted, JournalId = c.JournalId, isDebit = c.isDebit, Value = c.Value, AddedOn = c.AddedOn }).Where(v => v.isPosted == true && v.AccountName == accountname);
+            foreach (var item in transactions2)
             {
                 listJournals.Add(item.JournalId);
                 listDates.Add(item.AddedOn);
@@ -645,7 +953,8 @@ namespace WebApplication1.Controllers
                 {
                     currentbal += item.Value;
                     listCumulative.Add(currentbal);
-                }else
+                }
+                else
                 {
                     currentbal -= item.Value;
                     listCumulative.Add(currentbal);
@@ -661,9 +970,85 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPost]
+        public async Task<IActionResult> SaveFile(ICollection<IFormFile> files, [FromQuery]string journalId)
+        {
+            var user = await GetCurrentUserAsync();
+            if (user == null)
+            {
+                return RedirectToAction(nameof(AccountController.Login), "Account");
+            }
+            try
+            {
+                foreach (var file in files)
+                {
+                    if (file.Length > 0)
+                    {
+                        // Getting file into buffer.
+                        byte[] buffer = null;
+                        using (var stream = file.OpenReadStream())
+                        {
+                            buffer = new byte[stream.Length];
+                            stream.Read(buffer, 0, (int)stream.Length);
+                        }
+
+                        // Converting buffer into base64 code.
+                        string base64FileRepresentation = Convert.ToBase64String(buffer);
+
+                        // Saving it into database.
+                        DbContext.FileData.Add(new FileData()
+                        {
+                            Name = string.Format("{0}_{1}", DateTime.UtcNow.ToString("yyyyMMddHHmmss"), file.FileName),
+                            FileCode = base64FileRepresentation,
+                            journalId = journalId
+                        });
+                        await DbContext.SaveChangesAsync();
+                        EventLog trans = new EventLog();
+                        trans.EditedBy = user.Email;
+                        trans.EditedOn = DateTime.Now;
+                        trans.Description = "Document added to JournalID " + journalId;
+                        DbContext.Entry(trans).State = EntityState.Added;
+                    }
+                }
+                ViewBag.Files = DbContext.FileData.ToList();
+                ViewBag.Message = "File uploaded successfully";
+            }
+            catch (Exception ex)
+            {
+                ViewBag.Message = string.Format("Error: {0}", ex.ToString());
+            }
+
+            return RedirectToAction(nameof(ChartOfAccountsController.ViewJournals), "ChartOfAccounts");
+        }
+
+        [HttpPost]
+        public IActionResult getFiles(string journalId)
+        {
+            var files = DbContext.FileData.Where(x => x.journalId == journalId).ToList();
+            return Json(files);
+        }
+        public FileStreamResult Download(string fileName)
+        {
+            // Fetching file encoded code from database.
+            string code = DbContext.FileData.ToList().FirstOrDefault(x => x.Name.Equals(fileName)).FileCode;
+
+            // Converting to code to byte array
+            byte[] bytes = Convert.FromBase64String(code);
+
+            // Converting byte array to memory stream.
+            MemoryStream stream = new MemoryStream(bytes);
+
+            // Create final file stream result.
+            FileStreamResult fileStream = new FileStreamResult(stream, "*/*");
+
+            // File name with file extension.
+            fileStream.FileDownloadName = fileName;
+            return fileStream;
+        }
+
+        [HttpPost]
         public string GetData(AccountPostModel model)
         {
-            List<AvailableAccountsViewModel> accs2 = DbContext.AvailableAccounts.Where(x => x.AccountName == model.AccountName).ToList();          
+            List<AvailableAccountsViewModel> accs2 = DbContext.AvailableAccounts.Where(x => x.AccountName == model.AccountName).ToList();
             return JsonConvert.SerializeObject(accs2);
         }
 

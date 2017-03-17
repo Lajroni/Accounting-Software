@@ -4,6 +4,16 @@
 @inject SignInManager<ApplicationUser> SignInManager
 @inject UserManager<ApplicationUser> UserManager
 
+<style>
+    /*.btn {
+        background-color: green;
+    }
+
+        .btn:hover {
+            background-color: darkgreen !important;
+        }*/
+</style>
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -46,25 +56,31 @@
             </div>
         </div>
     </div>
+
     <div class="navbar navbar-inverse navbar-fixed-top" style="top:50px; height:30px">
         <div class="container">
             <div class="navbar-header" style="text-align:center;width: 100%;">
-                <a class="btn btn-primary success" style="background-color: green;border-color: green; width:150px" href="/chartofaccounts/viewaccounts"> Chart of Accounts</a>
-                <a class="btn btn-primary success" style="background-color: green;border-color: green;width:150px" href="/chartofaccounts/journalizing"> Journalize</a>
-                <a class="btn btn-primary success" style="background-color: green;border-color: green;width:150px" href="/chartofaccounts/viewjournals?posted=false"> Unposted Journals</a>
-                <a class="btn btn-primary success" style="background-color: green;border-color: green;width:150px" href="/chartofaccounts/viewjournals?posted=true"> Posted Journals</a>
-                <a class="btn btn-primary success" style="background-color: green;border-color: green;width:150px" href="/chartofaccounts/eventlog"> Event Log</a>
+                @if (SignInManager.IsSignedIn(User))
+                {
+                <a class="btn btn-primary success" style="background-color: green; border-radius: 20px;border-color: green;width:150px" href="/chartofaccounts/viewaccounts"> Chart of Accounts</a>
+                <a class="btn btn-primary success" style="background-color: green; border-radius: 20px;border-color: green;width:150px" href="/chartofaccounts/journalizing"> Journalize</a>
+                <a class="btn btn-primary success" style="background-color: green; border-radius: 20px;border-color: green;width:150px" href="/chartofaccounts/ViewJournals?JournalID=&AccountName=&DebitValue=&CreditValue=&Status=Submitted">Journals</a>
+                <a class="btn btn-primary success" style="background-color: green; border-radius: 20px;border-color: green;width:150px" href="/chartofaccounts/trialbalance"> Trial Balance</a>
+                <a class="btn btn-primary success" style="background-color: green; border-radius: 20px;border-color: green;width:150px" href="/chartOfAccounts/IncomeStatement"> Income Statement </a>
+                <a class="btn btn-primary success" style="background-color: green; border-radius: 20px;border-color: green;width:150px" href="/chartOfAccounts/BalanceSheet"> Balance Sheet </a>
+                <a class="btn btn-primary success" style="background-color: green; border-radius: 20px;border-color: green;width:150px" href="/chartOfAccounts/RetainedEarningsStatement"> Retained Earnings </a>
+                }
             </div>
         </div>
     </div>
-    <div class="container body-content" style="margin-top:50px">
+    <div class="container body-content" style="margin-top:50px;">
 
 @RenderBody()
 
 
         <hr />
         <footer>
-            <p>&copy; 2017 - BLue Sharks</p>
+            <p>&copy; 2017 - Blue Sharks</p>
         </footer>
     </div>
 

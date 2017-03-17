@@ -7,44 +7,71 @@
 @{
     ViewData["Title"] = "Home Page";
 }
+<style>
+    .btn{
+        background-color:green;
+            border-radius: 20px;
+    }
+    .btn:hover{
+        background-color: darkgreen
+    }
+</style>
 @if (SignInManager.IsSignedIn(User))
 {
     <div class="row" style="margin-top:20px; margin-bottom: 100px; text-align:center">
         <h2> User Actions </h2>
         <row>
             <div class="col-xs-6" style="text-align:right; margin-bottom:20px">
-                <a style="; width: 300px;" class="btn btn-lg btn-primary" href="ChartOfAccounts/Add"> Add Account to Chart of Accounts </a>
+                <a style="width: 300px;" class="btn btn-lg btn-primary" href="ChartOfAccounts/Add"> Add Account to Chart of Accounts </a>
             </div>
             <div class="col-xs-6" style="text-align:left; margin-bottom:20px">
-                <a style="; width: 300px;" class="btn btn-lg btn-primary" href="ChartOfAccounts/ViewAccounts"> View Chart of Accounts</a>
+                <a style="width: 300px;" class="btn btn-lg btn-primary" href="ChartOfAccounts/ViewAccounts"> View Chart of Accounts</a>
             </div>
         </row>
         <row>
             <div class="col-xs-6" style="text-align:right; margin-bottom:20px">
-                <a style="; width: 300px;" class="btn btn-lg btn-primary" href="ChartOfAccounts/Journalizing"> Journalize</a>
+                <a style="width: 300px;" class="btn btn-lg btn-primary" href="ChartOfAccounts/Journalizing"> Journalize</a>
             </div>
             <div class="col-xs-6" style="text-align:left; margin-bottom:20px">
-                <a style="; width: 300px;" class="btn btn-lg btn-primary" href="ChartOfAccounts/ViewJournals?posted=false"> View Journals</a>
+                <a style="width: 300px;" class="btn btn-lg btn-primary" href="ChartOfAccounts/ViewJournals?posted=false"> View Journals</a>
             </div>
         </row>
         <row>
             <div class="col-xs-6" style="text-align:right; margin-bottom:20px">
-                <a style="; width: 300px;" class="btn btn-lg btn-primary" href="ChartOfAccounts/ViewJournals?posted=true"> View Posted Journals</a>
+                <a style="width: 300px;" class="btn btn-lg btn-primary" href="ChartOfAccounts/ViewJournals?posted=true"> View Posted Journals</a>
             </div>
             <div class="col-xs-6" style="text-align:left; margin-bottom:20px">
-                <a style="; width: 300px;" class="btn btn-lg btn-primary" href="ChartOfAccounts/EventLog"> Event Log</a>
+                <a style="width: 300px;" class="btn btn-lg btn-primary" href="ChartOfAccounts/EventLog"> Event Log</a>
             </div>
         </row>
+        <row>
+            <div class="col-xs-6" style="text-align:right; margin-bottom:20px">
+                <a style="width: 300px;" class="btn btn-lg btn-primary" href="ChartOfAccounts/TrialBalance"> Trial Balance </a>
+            </div>
+            <div class="col-xs-6" style="text-align:left; margin-bottom:20px">
+                <a style="width: 300px;" class="btn btn-lg btn-primary" href="ChartOfAccounts/IncomeStatement"> Income Statement </a>
+            </div>
+        </row>
+        <row>
+            <div class="col-xs-6" style="text-align:right; margin-bottom:20px">
+                <a style="width: 300px;" class="btn btn-lg btn-primary" href="ChartOfAccounts/BalanceSheet"> Balance Sheet </a>
+            </div>
+            <div class="col-xs-6" style="text-align:left; margin-bottom:20px">
+                <a style="width: 300px;" class="btn btn-lg btn-primary" href="ChartOfAccounts/RetainedEarningsStatement"> Retained Earnings</a>
+            </div>
+        </row>
+        <div class="clearfix">
 
+        </div>
         @if (ViewBag.isAdmin)
         {
             <h2> Admin Actions </h2>
             <row>
                 <div class="col-xs-6" style="text-align:right; margin-bottom:20px">
-                    <a style="; width: 300px;" class="btn btn-lg btn-primary" href="ChartOfAccounts/AdminAddAccounts"> Add Account to Available Accounts</a>
+                    <a style="width: 300px;" class="btn btn-lg btn-primary" href="ChartOfAccounts/AdminAddAccounts"> Add Account to Available Accounts</a>
                 </div>
                 <div class="col-xs-6" style="text-align:left; margin-bottom:50px">
-                    <a style="; width: 300px;" class="btn btn-lg btn-primary" href="ChartOfAccounts/ViewAvailableAccounts"> View Available Accounts</a>
+                    <a style="width: 300px;" class="btn btn-lg btn-primary" href="ChartOfAccounts/ViewAvailableAccounts"> View Available Accounts</a>
                 </div>
             </row>
         }
@@ -53,14 +80,14 @@
 }
 else
 {
-    <row style="margin-top:20px; margin-bottom: 100px; text-align:center">
+    <div class="row" style="margin-top:50px; margin-bottom: 100px; text-align:center">
         <div class="col-xs-6" style="text-align:right; margin-bottom:20px">
-            <a style="; width: 300px;" class="btn btn-lg btn-primary" href="Account/Login"> Login </a>
+            <a style="width: 300px;" class="btn btn-lg btn-primary" href="Account/Login"> Login </a>
         </div>
         <div class="col-xs-6" style="text-align:left; margin-bottom:50px">
-            <a style="; width: 300px;" class="btn btn-lg btn-primary" href="Account/Register"> Register </a>
+            <a style="width: 300px;" class="btn btn-lg btn-primary" href="Account/Register"> Register </a>
         </div>
-    </row>
+    </div>
 
 }
 

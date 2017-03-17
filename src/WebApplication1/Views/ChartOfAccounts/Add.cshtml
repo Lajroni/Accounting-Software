@@ -83,12 +83,6 @@
     </div>
     <div class="form-group">
         <div class="col-md-10">
-            <label for="Order"> Order: </label>
-            <input id="Order" class="form-control" disabled />
-        </div>
-    </div>
-    <div class="form-group">
-        <div class="col-md-10">
             <label for="Description"> Description : </label>
             <input id="Description" class="form-control" disabled />
         </div>
@@ -108,35 +102,8 @@
                     var json = JSON.parse(data)[0];                
                     $("#AccountName").val(json.AccountName)
                     $("#AccountCode").val(json.AccountCode);
-
-                    switch (json.Category) {
-                        case 1: $("#Category").val("Asset"); break;
-                        case 2: $("#Category").val("Liability"); break;
-                        case 3: $("#Category").val("Owner's Equity"); break;
-                        case 4: $("#Category").val("Revenue"); break;
-                        case 5: $("#Category").val("Expense"); break;
-                    }
-
-                    switch(json.SubCategory) {
-                        case 10: $("#SubCategory").val("Cash-Related"); break;
-                        case 12: $("#SubCategory").val("Receivable"); break;
-                        case 13: $("#SubCategory").val("Land"); break;
-                        case 14: $("#SubCategory").val("Building");break;
-                        case 15: $("#SubCategory").val("Equipment"); break;
-                        case 20: $("#SubCategory").val("Short-term Payable");break;
-                        case 21: $("#SubCategory").val("Employe Payable");break;
-                        case 22: $("#SubCategory").val("Long-term Liability"); break;
-                        case 30: $("#SubCategory").val("Owner's Equity"); break;
-                        case 40: $("#SubCategory").val("Operating Revenues"); break;
-                        case 41: $("#SubCategory").val("Other Revenues"); break;
-                        case 50: $("#SubCategory").val("Purchases"); break;
-                        case 51: $("#SubCategory").val("Selling Expense"); break;
-                        case 52: $("#SubCategory").val("General Expense"); break;
-                        case 53: $("#SubCategory").val("Other Expense"); break;
-                        case 100: $("#SubCategory").val("Inapplicable"); break;
-                    }
-
-                    $("#Order").val(json.Order);
+                    $("#Category").val(json.Category);
+                    $("#SubCategory").val(json.SubCategory)
                     $("#Description").val(json.Description);
                     if (json.isLeftNormalSide) {
                         $("#isLeftNormalSide").val("Left");

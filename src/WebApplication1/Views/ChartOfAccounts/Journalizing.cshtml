@@ -14,9 +14,28 @@
 
 </style>
 <h2>Journalizing</h2>
-<form asp-action="Journalizing">
+@if (ViewBag.hasID == true)
+{
+    @if (ViewBag.ViewOnly == true)
+    {
+        <h4> Viewing Journal ID @ViewBag.JournalId </h4>
+        <h4> Posted: @ViewBag.Date.Date.ToString("d") </h4>
+    }
+    else
+    {
+        <h4> Editing Journal ID @ViewBag.JournalId</h4>
+        <h4> Posted: @ViewBag.Date.Date.ToString("d") </h4>
+    }
+}
+else
+{
+    <h4> Create new journal</h4>
+
+}
+
+
+<form asp-action="Journalizing" enctype="multipart/form-data" method="post">
     <div class="form-horizontal">
-        <h4>JournalizingViewModel</h4>
         <hr />
         <div asp-validation-summary="ModelOnly" class="text-warning"></div>
         <div id="errorholder" class="error" style="display:none">
@@ -57,22 +76,22 @@
         <hr>
         <div class="col-xs-10">
             <div class="col-xs-offset-2">
-                <div class="col-xs-10">
-                    <b class="col-xs-3 col-xs-offset-5"> Debits</b>
+                <div class="col-xs-12">
+                    <b class="col-xs-4 col-xs-offset-5"> Debits</b>
                     <b class="col-xs-3"> Credits</b>
                 </div>
             </div>
 
-            <div class="col-xs-offset-2" id="DebitsPart">
+            <div class="col-xs-offset-1 col-xs-11" style="border: 1px solid black;border-bottom: 0px; padding: 0px 0px;" id="DebitsPart">
             </div>
 
-            <div class="row ">
-                <b class="col-xs-4"> Credits</b>
-            </div>
-
-            <div class="col-xs-offset-2" id="CreditsPart">
+            <hr />
+            <div class="col-xs-offset-1 col-xs-11" style="border: 1px solid black;border-top: 0px; padding: 0px 0px;" id="CreditsPart">
             </div>
         </div>
+        <div class="clearfix"></div>
+        <hr class="clearfix"> <hr>
+
         @if (!ViewBag.ViewOnly)
         {
             <div class="form-group">
@@ -82,7 +101,30 @@
                 </div>
             </div>
         }
+        @{int i = 0;
+        @if (ViewBag.Files != null)
+            {
+                <table border="1">
+                    @foreach (var fd in ViewBag.Files)
+                    {
+                        @if(i == 0)
+                        {
+                            <tr>
+                                <td colspan="2">
+                                    <b> Uploaded Documents</b>
+                                </td>
+                            </tr>
 
+                        }
+                        <tr>
+                            <td>@fd.Name</td>
+                            <td>@Html.ActionLink("Download", "Download", "ChartOfAccounts", new { fileName = fd.Name }, new { target = "_blank" })</td>
+                        </tr>
+                        i++;
+                    }
+                </table>
+            }    
+        }
     </div>
     <input class="hidden" id="CreditsList">
     <input class="hidden" id="DebitsList">
@@ -107,6 +149,7 @@
 
     </div>
 </div>
+<div class="clearfix"></div>
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");
         <script>
@@ -128,25 +171,44 @@
                 var userInfo = JSON.parse('@Html.Raw(userInfoJson)');
                 jQuery.each(userInfo, function(){
                     updating = true;
-                    $('#Accounts option:contains(' + this.accountName +')').attr("selected", "selected")
-                    if(this.isDebit){
-                        $("#DebitInput").val(this.value);
+                        $('#Accounts option:contains(' + this.accountName + ')').attr("selected", "selected")
+                        if (this.isDebit)
+                    {
+                            $("#DebitInput").val(this.value);
                         console.log(this.Value)
-                    } else{
-                        $("#CreditInput").val(this.value);
+                        }
+                    else
+                    {
+                            $("#CreditInput").val(this.value);
                         console.log(2)
-                    }
+                        }
                     Add()
-                    $("#CreditInput").val("0.00");
-                    $("#DebitInput").val("0.00");
-                    $('#Accounts option:contains(' + this.accountName +')').attr("selected", "false")
+                        $("#CreditInput").val("0.00");
+                        $("#DebitInput").val("0.00");
+                        $('#Accounts option:contains(' + this.accountName + ')').attr("selected", "false")
                 })
+                var viewonly = @(ViewData["ViewOnly"].ToString().ToLower());
+                if(viewonly == true){
+                    $("input").attr("disabled","disabled")
+                }
+            });
+            $('#CreditsPart').on("change", ".creditsin",function(){ 
+                var inputs = $(".creditsin");
+                $("#CreditsValues").val("")
+                for(var i = 0; i < inputs.length; i++){
+                    $(inputs[i]).val(  parseFloat($(inputs[i]).val()).toFixed(2))
+                    $("#CreditsValues").val( $("#CreditsValues").val()  + "," +  $(inputs[i]).val())
+                }
+            })
 
-            });
-            $('.selectpicker').selectpicker({
-                style: 'btn-info',
-                size: 4
-            });
+            $('#DebitsPart').on("change", ".debitsin",function(){ 
+                var inputs = $(".debitsin");
+                $("#DebitsValues").val("")
+                for(var i = 0; i < inputs.length; i++){
+                    $(inputs[i]).val(  parseFloat($(inputs[i]).val()).toFixed(2))
+                    $("#DebitsValues").val( $("#DebitsValues").val()  + "," +  $(inputs[i]).val())
+                }
+            })
 
             function Add(){
                 var selected = $("#Accounts option:selected").text();
@@ -193,18 +255,20 @@
                             $("#modalAlertSuccess").html('<strong>Error!</strong> This account is already used on the equation!')
                             $('#myModal').modal("show");               
                         }else{
-                            var text = ' <div class="col-md-10"><div class="col-xs-3 col-xs-offset-1">' + selected + '</div> <div class="col-xs-1 col-xs-offset-3"> $ </div> <div class="col-xs-3"> ' + Math.abs(valueCred).toFixed(2) + "" + '</div>  <div class="col-xs-1"> <a onclick="remove(this)"> Remove </a> </div></div>'
+                            var text = ' <div class="col-xs-12 alert-danger"><div class="col-xs-4 col-xs-offset-1" >  <a href="/chartofaccounts/accountdetails?accountname=' + selected + '">' + selected +' </a> </div> <div class="col-xs-1 col-xs-offset-3"> $ </div> <input style="text-align:right" class="creditsin col-xs-2" value="' + Math.abs(valueCred).toFixed(2) + '"><div class="col-xs-1"> <a onclick="remove(this)" class="Credit"> Remove </a> </div></div>'
                             $("#CreditsPart").append(text);
                             $("#CreditsList").val($("#CreditsList").val() + "," + selected)
                             $("#CreditsValues").val($("#CreditsValues").val() + "," + valueCred)
                         }
                     }
                     else{
-                        if($("#CreditsList").val().includes(selected)){
-                            alert("This account is already used on the other side of equation.")
+                        if($("#DebitsList").val().includes(selected) || $("#CreditsList").val().includes(selected)){
+                            $("#modalAlertSuccess").addClass("alert-danger")
+                            $("#modalAlertSuccess").html('<strong>Error!</strong> This account is already used on the equation!')
+                            $('#myModal').modal("show");       
                         
                         }else{
-                            var text = ' <div class="col-md-10"><div class="col-xs-4">' + selected + '</div> <div class=col-xs-1> $ </div> <div class="col-xs-3">' +  Math.abs(valueDeb).toFixed(2) + "" + '</div>  <div class="col-xs-1 col-xs-offset-3"> <a onclick="remove(this)">  Remove </a>  </div></div>'
+                            var text = ' <div class="col-xs-12 alert-success"><div class="col-xs-4"> <a href="/chartofaccounts/accountdetails?accountname=' + selected + '">' + selected + '</a> </div> <div class=col-xs-1> $ </div> <input class="col-xs-2 debitsin" style="text-align:right" value="' +  Math.abs(valueDeb).toFixed(2) + '"</div>  <div class="col-xs-1 col-xs-offset-4"> <a onclick="remove(this)" class="Debit">  Remove </a>  </div></div>'
                             $("#DebitsPart").append(text);
                             $("#DebitsList").val($("#DebitsList").val() + "," + selected)
                             $("#DebitsValues").val($("#DebitsValues").val() + "," + valueDeb)
@@ -215,15 +279,20 @@
                 }
             }
             function remove(item){
-                var accname = $(item).parent().siblings().first().html()
+                var accname = $(item).parent().siblings().first().text()
+                var isDebit = $(item).hasClass("Debit")
                 var jqueryentry = "div :contains(" + accname + ")";
+                var entry = "," + accname.trim()
+                var entry2 = "," + $(item).parent().prev().val().trim()
                 $(jqueryentry).last().parent().remove()
-                var entry = "," + accname
-                var entry2 = "," + $(item).parent().prev().html()
-                $("#DebitsList").val( $("#DebitsList").val().replace(entry, ""))
-                $("#CreditsList").val( $("#CreditsList").val().replace(entry, ""))
-                $("#DebitsValues").val( $("#DebitsValues").val().replace(entry2, ""))
-                $("#CreditsValues").val( $("#CreditsValues").val().replace(entry2, ""))
+                if(isDebit == true){
+                    $("#DebitsList").val( $("#DebitsList").val().replace(entry, ""))
+                    $("#DebitsValues").val( $("#DebitsValues").val().replace(entry2, ""))
+                } else{
+                    $("#CreditsList").val( $("#CreditsList").val().replace(entry, ""))
+                    $("#CreditsValues").val( $("#CreditsValues").val().replace(entry2, ""))               
+                }
+
             }
             function journalize() {
                var debits = $("#DebitsList").val().substring(1)
@@ -268,8 +337,6 @@
         </script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.2/js/bootstrap-select.min.js"></script>
         <script>
-            
-            $(function() {
                 $('.selectpicker').on('change', function(){
                     var selected = $(this).find("option:selected").val();
                     $.ajax({
@@ -288,7 +355,6 @@
                         }
                     })
                 });
-            });
         </script>
     }
 

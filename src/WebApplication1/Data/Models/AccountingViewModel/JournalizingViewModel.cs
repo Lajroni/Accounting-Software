@@ -35,5 +35,7 @@ namespace WebApplication1.Data.Models.AccountingViewModel
         public bool isApproved { get; set; }
 
         public bool isPosted { get; set; }
+
+        public string reason { get; set; }
     }
 }

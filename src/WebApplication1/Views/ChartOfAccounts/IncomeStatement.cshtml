@@ -1,0 +1,128 @@
+@model WebApplication1.Controllers.ChartOfAccountsController
+
+@{
+    ViewData["Title"] = "IncomeStatement";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<div  class="" style="text-align:center;margin-left: 300px;margin-right: 300px; margin-bottom:10px;">
+    <h4>Income Statement</h4>
+    <h4> Blue Sharks</h4>
+    <h4> For period ending on @DateTime.Now.Date.ToString("d")</h4>
+    <button class="btn btn-primary printhide" onclick="print()"> Print </button>
+</div>
+<link rel="stylesheet" href="~/css/trial.css" />
+
+<div style="text-align:center;margin-left: 300px;margin-right: 300px;" class="printarea" >
+
+    <table class="table table-bordered table-hover" >
+        <tbody>
+             <tr> 
+                <td colspan="2"> 
+                    <b>  Revenue</b>   
+                </td>
+             </tr>
+            @{ int i = 0;
+            @foreach (var item in ViewBag.RevenueAccs)
+            {
+                <tr>
+                    <td style="padding-left: 40px; width:400px">
+                        <a href="/chartofaccounts/accountdetails?accountname=@(item.AccountName)"> <b> @item.AccountName </b>   </a>
+                    </td>
+                    <td style="text-align:right">
+                        @if (i == 0)
+                        {
+                            <p style="float:left;display:inline-block !important"> $</p>
+                        }
+                        @if (item.Balance > 0)
+                        {
+                            <p style="display:inline-block !important"> @Convert.ToDecimal(item.Balance).ToString("#,##0.00") </p>
+                        }
+                        else
+                        {
+                            <p style="display:inline-block !important"> (@Convert.ToDecimal(Math.Abs(item.Balance)).ToString("#,##0.00"))  </p>
+                        }
+
+                    </td>
+                </tr>
+                i++;
+            }
+            }
+            <tr>
+                <td style="padding-left: 40px;">
+                    <b> Total Revenue</b>
+                </td>
+                <td style="text-align:right; ">
+                    <p style="float:left;display:inline-block"> $</p>
+                    <b style="border-bottom:1px solid black;"> @Convert.ToDecimal(@ViewBag.TotalRev).ToString("#,##0.00")   </b>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <br />
+    <table class="table table-bordered table-hover">
+        <tbody>
+            <tr>
+                <td colspan="2">
+                    <b>  Expense </b>
+                </td>
+            </tr>
+            @{ int j = 0;
+            @foreach (var item in ViewBag.ExpenseAccs)
+            {
+                <tr>
+                    <td style="padding-left: 40px; width:400px">
+                        <a href="/chartofaccounts/accountdetails?accountname=@(item.AccountName)"> <b> @item.AccountName </b>   </a>
+                    </td>
+                    <td style="text-align:right">
+                        @if (j == 0)
+                        {
+                            <p style="float:left;display:inline-block"> $</p>
+                        }
+                        @if (item.Balance > 0)
+                        {
+                            <p style="display:inline-block"> @Convert.ToDecimal(item.Balance).ToString("#,##0.00") </p>
+                        }
+                        else
+                        {
+                            <p style="display:inline-block"> (@Convert.ToDecimal(Math.Abs(item.Balance)).ToString("#,##0.00"))  </p>
+                        }
+                    </td>
+                </tr>
+                j++;
+            }  
+            }
+            <tr>
+                <td style="padding-left: 40px; width:100px">
+                    <b> Total Expense</b>
+                </td>
+                <td style="text-align:right;">
+                    <p style="float:left;display:inline-block"> $</p>
+                    <b style="border-bottom:1px solid black;"> @Convert.ToDecimal(@ViewBag.TotalExp).ToString("#,##0.00")   </b>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <table class="table table-bordered table-hover" >
+        <tbody>
+            <tr>
+                <td style="width:400px">
+                    @if (ViewBag.NetProfit > 0)
+                    {
+                        <b> Net Profit</b>
+                    }
+                    else
+                    {
+                        <b> Net Loss</b>
+                    }
+                </td>
+                <td style="text-align:right">
+                    <div style="">
+                        <p style="float:left;display:inline-block"> $ </p>
+                        <p style="display:inline-block;border-bottom: 1px solid black;" > <b style="border-bottom: 1px solid black;">  @Convert.ToDecimal(@ViewBag.NetProfit).ToString("#,##0.00") </b></p> 
+                    </div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+</div>

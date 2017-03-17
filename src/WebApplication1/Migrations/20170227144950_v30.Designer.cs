@@ -8,9 +8,10 @@ using WebApplication1.Data;
 namespace WebApplication1.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20170227144950_v30")]
+    partial class v30
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
             modelBuilder
                 .HasAnnotation("ProductVersion", "1.0.1")
@@ -129,11 +130,14 @@ namespace WebApplication1.Migrations
 
                     b.Property<int>("AccountCode");
 
-                    b.Property<string>("Category");
+                    b.Property<byte>("Category");
 
-                    b.Property<string>("Description");
+                    b.Property<string>("Description")
+                        .IsRequired();
 
-                    b.Property<string>("SubCategory");
+                    b.Property<int>("Order");
+
+                    b.Property<byte>("SubCategory");
 
                     b.Property<bool>("isLeftNormalSide");
 
@@ -178,22 +182,6 @@ namespace WebApplication1.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("EventLog");
-                });
-
-            modelBuilder.Entity("WebApplication1.Data.Models.AccountingViewModel.FileData", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<string>("FileCode");
-
-                    b.Property<string>("Name");
-
-                    b.Property<string>("journalId");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("FileData");
                 });
 
             modelBuilder.Entity("WebApplication1.Data.Models.AccountingViewModel.JournalizingViewModel", b =>

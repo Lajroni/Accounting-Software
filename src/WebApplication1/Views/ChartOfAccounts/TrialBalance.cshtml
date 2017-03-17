@@ -1,0 +1,111 @@
+
+@{
+    ViewData["Title"] = "View";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<div class="col-xs-offset-0" style="text-align:center; margin-left:250px;margin-right:250px">
+    <div class="printarea" >
+        <h4> <b> Blue Sharks Accounting </b></h4>
+        <h4>Trial Balance</h4>
+        <h6> @DateTime.Now.Date.ToString("d") </h6>
+        <button class="btn btn-primary printhide" onclick="print()"> Print </button>
+    </div>
+    <link rel="stylesheet" href="~/css/trial.css" />
+    <hr />
+
+
+    <table class="table table-bordered printarea" style="text-align:right; border: 2px solid black; ">
+        <tbody>
+            <tr style="border: 2px solid black; ">
+                <td style="width:250px;text-align:left">
+                    Account Name
+                </td>
+                <td style="width:120px">
+                    Debit
+                </td>
+                <td style="width:120px;">
+                    Credit
+                </td>
+            </tr>
+            @{int i = 0; bool firstDebit = false; bool firstCredit = false;
+            @foreach (var account in ViewBag.Accounts)
+            {
+                <tr>
+                    <td style="width:250px;text-align:left">
+                            <a  style="font-weight: bold;" href="/chartofaccounts/accountdetails?accountname=@ViewBag.Accounts[i]"> @ViewBag.Accounts[i] </a>
+                    </td>
+                    <td style="width:120px">
+                        @if (ViewBag.Sides[i] == true)
+                        {
+                            <div>
+                                @if (firstDebit == false)
+                                {
+                                    <p style="float:left"> $</p>
+                                    firstDebit = true;
+                                }
+                                @if (ViewBag.Parenthesis[i] == true)
+                                {
+                                    <p>
+                                        (@Convert.ToDecimal(ViewBag.Values[i]).ToString("#,##0.00"))
+                                    </p>
+                                }
+                                else
+                                {
+                                    <p>
+                                        @Convert.ToDecimal(ViewBag.Values[i]).ToString("#,##0.00")
+                                    </p>
+                                }
+                            </div>
+                        }
+                    </td>
+                    <td style="width:120px;">
+                        @if (!ViewBag.Sides[i] == true)
+                        {
+                            <div>
+                                @if (firstCredit == false)
+                                {
+                                    <p style="float:left"> $</p>
+                                    firstCredit = true;
+                                }
+                                @if (ViewBag.Parenthesis[i] == true)
+                                {
+                                    <p>
+                                        (@Convert.ToDecimal(ViewBag.Values[i]).ToString("#,##0.00"))
+                                    </p>
+                                }
+                                else
+                                {
+                                    <p>
+                                        @Convert.ToDecimal(ViewBag.Values[i]).ToString("#,##0.00")
+                                    </p>
+                                }
+                            </div>
+                        }
+                    </td>
+                </tr>
+
+                i++;
+            }
+            }
+            <tr style="border: 2px solid black; ">
+                <td style="width:250px;text-align:left">
+                    <b> Total </b>
+                </td>
+                <td style="width:120px">
+                    <div style="">
+                        <p style="float:left; display:inline-block"> $ </p>
+                        <p style="border-bottom: 1px solid black; display:inline-block;"> <b style="border-bottom: 1px solid black;"> @Convert.ToDecimal(@ViewBag.Sum[0]).ToString("#,##0.00") </b> </p>
+                    </div>
+                </td>
+                <td style="width:120px">
+                    <div style="">
+                        <p style="float:left; display:inline-block"> $ </p>
+                        <p style="border-bottom: 1px solid black; display:inline-block;"> <b style="border-bottom: 1px solid black;">  @Convert.ToDecimal(@ViewBag.Sum[1]).ToString("#,##0.00")  </b></p>
+                    </div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+@section Scripts {
+}

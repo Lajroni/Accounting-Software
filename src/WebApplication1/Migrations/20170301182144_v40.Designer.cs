@@ -8,8 +8,8 @@ using WebApplication1.Data;
 namespace WebApplication1.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20170225213841_initial")]
-    partial class initial
+    [Migration("20170301182144_v40")]
+    partial class v40
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -130,14 +130,11 @@ namespace WebApplication1.Migrations
 
                     b.Property<int>("AccountCode");
 
-                    b.Property<byte>("Category");
+                    b.Property<string>("Category");
 
-                    b.Property<string>("Description")
-                        .IsRequired();
+                    b.Property<string>("Description");
 
-                    b.Property<int>("Order");
-
-                    b.Property<byte>("SubCategory");
+                    b.Property<string>("SubCategory");
 
                     b.Property<bool>("isLeftNormalSide");
 
@@ -184,6 +181,22 @@ namespace WebApplication1.Migrations
                     b.ToTable("EventLog");
                 });
 
+            modelBuilder.Entity("WebApplication1.Data.Models.AccountingViewModel.FileData", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<string>("FileCode");
+
+                    b.Property<string>("Name");
+
+                    b.Property<string>("journalId");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("FileData");
+                });
+
             modelBuilder.Entity("WebApplication1.Data.Models.AccountingViewModel.JournalizingViewModel", b =>
                 {
                     b.Property<int>("Id")
@@ -209,6 +222,8 @@ namespace WebApplication1.Migrations
                     b.Property<bool>("isRejected");
 
                     b.Property<bool>("isSubmited");
+
+                    b.Property<string>("reason");
 
                     b.HasKey("Id");
 

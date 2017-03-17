@@ -14,52 +14,66 @@
         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
         <div class="form-group">
-            <label asp-for="AccountName" class="col-md-2 control-label"></label>
+            <label asp-for="AccountName" class="col-md-2 control-label">Account Name</label>
             <div class="col-md-10">
                 <input asp-for="AccountName" class="form-control" />
                 <span asp-validation-for="AccountName" class="text-danger" />
             </div>
         </div>
         <div class="form-group">
-            <label asp-for="AccountCode" class="col-md-2 control-label"></label>
-            <div class="col-md-10">
-                <input asp-for="AccountCode" class="form-control" />
-                <span asp-validation-for="AccountCode" class="text-danger" />
-            </div>
-        </div>
-        <div class="form-group">
             <label asp-for="Category" class="col-md-2 control-label"> Category: </label>
             <div class="col-md-10">
-                <select asp-for="Category">
-                    <option value="Asset">Asset</option>
-                    <option value="Liability">Liability</option>
-                    <option value="OwnersEquity">Owner's Equity</option>
-                    <option value="Expense">Expense</option>
-                    <option value="Revenue">Revenue</option>
+                <select asp-for="Category" id="Category">
+                    <option value="None"> Select Option</option>
+                    <option value="Asset"> Asset</option>
+                    <option value="Liability"> Liability</option>
+                    <option value="OwnersEquity"> Owner's Equity</option>
+                    <option value="Revenue"> Revenue</option>
+                    <option value="Expense"> Expense</option>
                 </select>
             </div>
         </div>
         <div class="form-group">
             <label asp-for="SubCategory" class="col-md-2 control-label"> SubCategory: </label>
             <div class="col-md-10">
-                <select asp-for="SubCategory">
-                    <option class="cat1" value="CashRelated">Cash Related</option>
-                    <option class="cat1" value="Receivables">Receivables</option>
-                    <option class="cat1" value="Land">Land</option>
-                    <option class="cat1" value="Building">Building</option>
-                    <option class="cat1" value="Equipment">Equipment</option>
-                    <option class="cat2" value="EmployeePayable">Employee Payable</option>
-                    <option class="cat2" value="ShortTermPayable">Short-Term Payable</option>
-                    <option class="cat2" value="LongTermLiability">Long Term Liability</option>
-                    <option class="cat3" value="OwnersEquity">Owner's Equity</option>
-                    <option class="cat4" value="OperatingRevenues">Operating Revenue</option>
-                    <option class="cat4" value="OtherRevenues">Other Revenue</option>
-                    <option class="cat5" value="Purchase">Purchase</option>
-                    <option class="cat5" value="SellingExpense">Selling Expenses</option>
-                    <option class="cat5" value="GeneralExpense">General Expenses</option>
-                    <option class="cat5" value="OtherExpense">Other Expense</option>
-                    <option class="cat6" value="Inapplicable">Inapplicable</option>
+                <select asp-for="SubCategory" disabled id="SubCategory" style="background-color:gray">
+                    <option class="cat opt" value="None"> </option>
+                    <option class="cat1 opt0 opt" value="CashRelated">Cash Related</option>
+                    <option class="cat1 opt1 opt" value="Receivables">Receivables</option>
+                    <option class="cat1 opt2 opt" value="Inventories">Inventories</option>
+                    <option class="cat1 opt3 opt" value="PrepaidItems">PrepaidItems</option>
+                    <option class="cat1 opt4 opt" value="LongTermInvestments">LongTermInvestments</option>
+                    <option class="cat1 opt5 opt" value="Land">Land</option>
+                    <option class="cat1 opt6 opt" value="Building">Building</option>
+                    <option class="cat1 opt7 opt" value="Equipment">Equipment</option>
+                    <option class="cat1 opt8 opt" value="Intangibles">Intangibles</option>
+                    <option class="cat2 opt0 opt" value="ShortTermPayable">Short-Term Payable</option>
+                    <option class="cat2 opt1 opt" value="EmployeePayable">Employee Payable</option>
+                    <option class="cat2 opt2 opt" value="EmployerPayable">Employer Payable</option>
+                    <option class="cat2 opt3 opt" value="SalesTax">Sales Tax</option>
+                    <option class="cat2 opt4 opt" value="DeferredRevenuesAndCurrentPortionLongTermDebt">Deferred Revenues and Current Portion of Long-Term Debt</option>
+                    <option class="cat2 opt5 opt" value="LongTermLiabilities">Long-Term Liabilities</option>
+                    <option class="cat3 opt0 opt" value="OwnersEquity">Owner's Equity</option>
+                    <option class="cat4 opt0 opt" value="OperatingRevenues">Operating Revenue</option>
+                    <option class="cat4 opt1 opt" value="OtherRevenues">Other Revenue</option>
+                    <option class="cat5 opt0 opt" value="CostOfGoodsSold">Cost Of Goods Sold</option>
+                    <option class="cat5 opt1 opt" value="SellingExpense">Selling Expenses</option>
+                    <option class="cat5 opt2 opt" value="GeneralAdministrativeExpense">General and Administrative Expenses</option>
+                    <option class="cat5 opt3 opt" value="OtherExpense">Other Expense</option>
                 </select>
+            </div>
+        </div>
+        <div class="form-group" style="display:none">
+            <div class="col-md-10">
+                <input style="display: inline-block;" asp-for="AccountCode" class="form-control" id="AccountCodeFor" />
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="AccountCode" class="col-md-2 control-label">Account Code</label>
+            <div class="col-md-10">
+                <input style="width: 30px;" id="FirstPortionAC" disabled>
+                <input style="display: inline-block;" class="form-control" id="AccountCode" />
+                <span asp-validation-for="AccountCode" class="text-danger" />
             </div>
         </div>
         <div class="form-group">
@@ -70,26 +84,29 @@
             </div>
         </div>
         <div class="form-group">
-            <label asp-for="Order" class="col-md-2 control-label"></label>
-            <div class="col-md-10">
-                <input asp-for="Order" class="form-control" />
-                <span asp-validation-for="Order" class="text-danger" />
-            </div>
-        </div>
-        <div class="form-group">
             <div class="col-md-offset-2 col-md-10">
-                <div class="checkbox">
-                    <input asp-for="isLeftNormalSide" />
-                    <label asp-for="isLeftNormalSide">Left Normal Side? </label>
+                <div class="radio">
+                    <div>
+                        <input asp-for="isLeftNormalSide" type="radio" value="false" checked="checked"/>
+                        Left
+                    </div>
+                    <div>
+                        <input asp-for="isLeftNormalSide" type="radio" value="true" /> Right
+                    </div>
                 </div>
             </div>
         </div>
+        @if (ViewBag.Error != null)
+        {
+            <p color="red"> @ViewBag.Error </p>
+
+        }
+        <p id="ErrorMessage" style="color:red"> </p>
         <div class="form-group">
             <div class="col-md-offset-2 col-md-10">
-                <input type="submit" value="Create" class="btn btn-default" />
+                <input type="submit" id="create" value="Create" class="btn btn-default" />
             </div>
         </div>
-
     </div>
 </form>
 
@@ -99,4 +116,77 @@
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+
+        $("#Category").change(function () {
+            $("#FirstPortionAC").val("");
+            $("#SubCategory").removeAttr("disabled")
+            $("#SubCategory").css("background-color", "white")
+            $("#SubCategory option").css("display", "none")
+            var val = $(this).val()
+            if (val  == "Asset") {
+                $(".cat1").css("display", "block")
+            } else if (val == "Liability") {
+                $(".cat2").css("display", "block")
+            } else if (val == "OwnersEquity") {
+                $(".cat3").css("display", "block")
+            } else if (val == "Revenue") {
+                $(".cat4").css("display", "block")
+            } else if (val == "Expense") {
+                $(".cat5").css("display", "block")
+            } else {
+                $("#SubCategory").attr("disabled", "disabled");
+                $("#SubCategory").css("background-color", "gray")
+            }
+            $('#SubCategory option:eq(0)').prop("selected", true)
+            $("#AccountCode").trigger("change")
+        })
+        $("#SubCategory").change(function () {
+            $("#SubCategory option:selected").text()
+            var text = ""
+            if($("#SubCategory option:selected").hasClass("cat1")){
+                text = "1"
+            } else if ($("#SubCategory option:selected").hasClass("cat2")) {
+                text = "2"
+            } else if ($("#SubCategory option:selected").hasClass("cat3")) {
+                text = "3"
+            } else if ($("#SubCategory option:selected").hasClass("cat4")) {
+                text = "4"
+            } else if ($("#SubCategory option:selected").hasClass("cat5")) {
+                text = "5"
+            }
+            if ($("#SubCategory option:selected").hasClass("opt1")) {
+                text += "1"
+            } else if ($("#SubCategory option:selected").hasClass("opt2")) {
+                text += "2"
+            } else if ($("#SubCategory option:selected").hasClass("opt3")) {
+                text += "3"
+            } else if ($("#SubCategory option:selected").hasClass("opt4")) {
+                text += "4"
+            } else if ($("#SubCategory option:selected").hasClass("opt5")) {
+                text += "5"
+            } else if ($("#SubCategory option:selected").hasClass("opt6")) {
+                text += "6"
+            } else if ($("#SubCategory option:selected").hasClass("opt7")) {
+                text += "7"
+            } else if ($("#SubCategory option:selected").hasClass("opt8")) {
+                text += "8"
+            } else if ($("#SubCategory option:selected").hasClass("opt0")) {
+                text += "0"
+            }
+            $("#FirstPortionAC").val(text);
+            $("#AccountCodeFor").val($("#FirstPortionAC").val() + "" + $("#AccountCode").val())
+            $("#AccountCode").trigger("change")
+        })
+        $("#AccountCode").change(function (e) {
+            $("#AccountCodeFor").val($("#FirstPortionAC").val() + "" + $("#AccountCode").val())
+            if ($("#AccountCodeFor").val().length != 5 || $("#FirstPortionAC").val().length != 2) {
+                $("#create").attr("disabled", "disabled")
+                $("#ErrorMessage").html("The length of account code must be 5. That includes the 2 predefined numbers in the account code from category and sub-category. ")
+            } else {
+                $("#ErrorMessage").html("")
+                $("#create").removeAttr("disabled")
+            }
+        })
+    </script>
 }

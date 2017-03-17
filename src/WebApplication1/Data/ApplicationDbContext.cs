@@ -28,7 +28,7 @@ namespace WebApplication1.Data
         public DbSet<Models.AccountingViewModel.AvailableAccountsViewModel> AvailableAccounts { get; set; }
         public DbSet<Models.AccountingViewModel.JournalizingViewModel> Journals { get; set; }
         public DbSet<Models.AccountingViewModel.Transactions> Transactions { get; set; }
-   
+        public DbSet<Models.AccountingViewModel.FileData> FileData { get; set; }
         public DbSet<Models.AccountingViewModel.EventLog> EventLog { get; set; }
     }
 }

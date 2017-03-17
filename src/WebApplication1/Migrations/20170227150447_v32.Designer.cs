@@ -8,9 +8,10 @@ using WebApplication1.Data;
 namespace WebApplication1.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20170227150447_v32")]
+    partial class v32
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
             modelBuilder
                 .HasAnnotation("ProductVersion", "1.0.1")
@@ -129,11 +130,14 @@ namespace WebApplication1.Migrations
 
                     b.Property<int>("AccountCode");
 
-                    b.Property<string>("Category");
+                    b.Property<byte>("Category");
 
-                    b.Property<string>("Description");
+                    b.Property<string>("Description")
+                        .IsRequired();
 
-                    b.Property<string>("SubCategory");
+                    b.Property<int>("Order");
+
+                    b.Property<byte>("SubCategory");
 
                     b.Property<bool>("isLeftNormalSide");
 

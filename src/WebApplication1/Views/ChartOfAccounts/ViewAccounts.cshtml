@@ -7,27 +7,34 @@
     td{
             border-right: 1px solid gray;
     }
+    .red{
+        color:red !important
+    }
+    .green {
+        color: green !important
+    }
 </style>
 <h2>View Accounts</h2>
-
-<div>
+<div id="errorholder" class="error" style="display:none;">
+    <div class="alert alert-danger">
+        <strong>Error!</strong> This account cannot be deactivated because it has been used in journalizing.
+    </div>
+</div>
+<div style="text-align:center">
     <hr />
-    <table>
-        <tr style="border: 3px solid black;">
-            <td style="width: 150px; padding-left: 10px;">
+    <table style="width:1200px" class="table table-hover table-bordered">
+        <tr style="">
+            <td style="width: 250px; padding-left: 10px;">
                 <p> Account Name</p>
             </td>
-            <td style="width: 150px; padding-left: 10px;">
-                <p> Initial Balance</p>
-            </td>
-            <td style="width: 200px; padding-left: 10px;">
+            <td style="width: 100px; padding-left: 10px;">
                 <p> Added On</p>
             </td>
             <td style="width: 200px; padding-left: 10px;">
                 <p> Added By</p>
             </td>
             <td style="width: 150px; padding-left: 10px;">
-                <p> Active</p>
+                <p> Status</p>
             </td>
             <td style="width: 150px; padding-left: 10px;">
                 <p> Toggle (De)Activation</p>
@@ -36,33 +43,40 @@
         @foreach (var model in ViewBag.Accounts.Items)
         {
         <tr style="border: 1px solid gray;">
-            <td style="width: 150px; padding-left: 10px;">
-                <a href="/chartofaccounts/accountdetails?accountname=@(model.AccountName)">  @Html.Encode(model.AccountName)  </a>
+            <td style="width: 250px; padding-left: 10px;">
+                <a href="/chartofaccounts/accountdetails?accountname=@(model.AccountName)"> <b> @Html.Encode(model.AccountName) </b>   </a>
             </td>
-            <td style="width: 150px; padding-left: 10px;">
-                @Html.Encode(model.InitialBalance)
-            </td>
-            <td style="width: 200px; padding-left: 10px;">
+            <td style="width: 100px; padding-left: 10px;">
                 @Html.Encode(model.AddedOn.Date.ToString("d"))
             </td>
             <td style="width: 200px; padding-left: 10px;">
                 @Html.Encode(model.AddedBy)
             </td>
             <td style="width: 150px; padding-left: 10px;">
-                @Html.Encode(model.isActive)
+                @if (model.isActive)
+                {
+                    <p style="color:green"> Active </p>
+                }
+                else
+                {
+                    <p style="color:red"> Inactive </p>
+                }
             </td>
             <td style="width: 150px; padding-left: 10px;">
-                @Html.ActionLink("Change Activation", "ToggleActive", "ChartOfAccounts", new {id = model.AccountName })
+                @if (model.isActive)
+                {
+                    <p style="color:red"> @Html.ActionLink("Deactivate", "ToggleActive", "ChartOfAccounts", new { id = model.AccountName }, new {@class = "red" }) </p>
+                }
+                else
+                {
+                    <p style="color:green"> @Html.ActionLink("Activate", "ToggleActive", "ChartOfAccounts", new { id = model.AccountName }, new { @class = "green" }) </p>
+                }
+
             </td>
          </tr>
         }
     </table>
 
-</div>
-<div id="errorholder" class="error" style="display:none;">
-        <div class="alert alert-danger">
-            <strong>Error!</strong> This account has un-posted journals. You must post or delete them before deactivating an account.
-        </div>
 </div>
 
 

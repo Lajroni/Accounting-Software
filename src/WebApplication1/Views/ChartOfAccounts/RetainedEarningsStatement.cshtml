@@ -1,0 +1,72 @@
+@model WebApplication1.Controllers.ChartOfAccountsController
+
+@{
+    ViewData["Title"] = "IncomeStatement";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<div style="text-align:center;margin-left: 300px;margin-right: 300px; margin-bottom:10px;">
+    <h4> Owner's Equity</h4>
+    <h4> Blue Sharks</h4>
+    <h4> @DateTime.Now.Date.ToString("d")</h4>
+    <button class="btn btn-primary printhide" onclick="print()"> Print </button>
+</div>
+<link rel="stylesheet" href="~/css/trial.css" />
+
+<div style="text-align:center;margin-left: 300px;margin-right: 300px;" class="printarea">
+
+    <table class="table table-bordered table-hover">
+        <tbody>
+            <tr>
+                <td>
+                    <b>  Owner's Equity initial at @ViewBag.OwnersEquityAcc.AddedOn.ToString("d") </b>
+                </td>
+                <td style="text-align:right">
+                    @Convert.ToDecimal(@ViewBag.OwnersEquityAcc.InitialBalance).ToString("#,##0.00")                  
+                </td>
+            </tr>
+            <tr>
+                <td>
+                      @if(ViewBag.NetIncome > 0)
+                      {<p> Net Income</p>}
+                      else
+                      {<p> Net Loss</p>}
+                </td>
+                <td style="text-align:right">
+                    <p> @ViewBag.NetIncome </p>
+                </td>
+            </tr>
+            @foreach (var item in ViewBag.AccsLess)
+            {
+                <tr>
+                    <td style="width:400px">
+                        <p style="display: inline-block; width:100px; text-align:left" >Less  </p>
+                        <a href="/chartofaccounts/accountdetails?accountname=@(item.AccountName)"> <b> @item.AccountName </b>   </a>
+                    </td>
+                    <td style="text-align:right">
+                                <p> -@Convert.ToDecimal(item.Balance).ToString("#,##0.00")</p>
+                    </td>
+                </tr>
+            }
+            @foreach (var item in ViewBag.AccsAdd)
+            {
+                <tr>
+                    <td style="padding-left: 40px; width:400px">
+                        <p style="display: inline-block; width:100px; text-align:left">Add  </p>
+                        <a href="/chartofaccounts/accountdetails?accountname=@(item.AccountName)"> <b> @item.AccountName </b>   </a>
+                    </td>
+                    <td style="text-align:right">
+                            @Convert.ToDecimal(item.Balance).ToString("#,##0.00")
+                    </td>
+                </tr>
+            }
+            <tr>
+                <td style="">
+                    <b> Owner's Equity final at @DateTime.Now.Date.ToString("d") </b>
+                </td>
+                <td style="text-align:right">
+                    <b> @Convert.ToDecimal(@ViewBag.OEFinal).ToString("#,##0.00")   </b>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>

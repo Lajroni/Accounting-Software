@@ -13,9 +13,14 @@
 
 <div>
     <hr />
-    <table>
-        <tr style="border: 3px solid black;">
-            <td style="width: 150px; padding-left: 10px;">
+    <div id="errorholder" class="error" style="display:none;">
+        <div class="alert alert-danger">
+            <strong>Error!</strong> Cannot edit this account because it has been added to chart of accounts.
+        </div>
+    </div>
+    <table class="table table-bordered table-hover" >
+        <tr style="">
+            <td style="width: 200px; padding-left: 10px;">
                 <p> Account Name</p>
             </td>
             <td style="width: 150px; padding-left: 10px;">
@@ -26,9 +31,6 @@
             </td>
             <td style="width: 150px; padding-left: 10px;">
                 <p> Account Code</p>
-            </td>
-            <td style="width: 150px; padding-left: 10px;">
-                <p> Order</p>
             </td>
             <td style="width: 150px; padding-left: 10px;">
                 <p> Description</p>
@@ -43,8 +45,8 @@
         @foreach (var model in ViewBag.Accounts.Items)
         {
             <tr style="border: 1px solid gray;">
-                <td style="width: 150px; padding-left: 10px;">
-                    @Html.Encode(model.AccountName)
+                <td style="width: 200px; padding-left: 10px;">
+                    <a href="/chartofaccounts/accountdetails?accountname=@(model.AccountName)"> <b> @Html.Encode(model.AccountName) </b>   </a>
                 </td>
                 <td style="width: 150px; padding-left: 10px;">
                     @Html.Encode(model.Category)
@@ -54,9 +56,6 @@
                 </td>
                 <td style="width: 150px; padding-left: 10px;">
                     @Html.Encode(model.AccountCode)
-                </td>
-                <td style="width: 150px; padding-left: 10px;">
-                    @Html.Encode(model.Order)
                 </td>
                 <td style="width: 150px; padding-left: 10px;">
                     @Html.Encode(model.Description)
@@ -77,3 +76,17 @@
         }
     </table>
 </div>
+
+
+@section Scripts{
+    @{ 
+        <script>
+            $(document).ready(function() {
+                var success = @((TempData["CannotEdit"] != null).ToString().ToLower());
+                if (success == true) {
+                    $("#errorholder").css("display","block")
+                }
+            });
+        </script>
+    }
+}

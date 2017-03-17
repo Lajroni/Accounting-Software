@@ -4,16 +4,20 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h2>AccountDetails</h2>
 
-<div class="col-xs-offset-3">
-    <h4>Account Details: @ViewBag.Account.AccountName</h4>
+
+<div class="col-xs-offset-0" style="text-align:center; margin-left:250px;margin-right:250px">
+    <h2>@ViewBag.Account.AccountName</h2>
+    <h6> @DateTime.Now.Date.ToString("d") </h6>
     <hr />
-    <table class="table" style="text-align:right; width:550px;">
+    <table class="table" style="text-align:right;">
         <thead>
             <tr>
                 <td style="width:80px;text-align:left">
                     Journal ID
+                </td>
+                <td style="width:100px">
+                    Date
                 </td>
                 <td style="width:20px"></td>
                 <td style="width:50px;">
@@ -24,52 +28,59 @@
                     Credit
                 </td>
                 <td style="width:130px;">
-                    Cumulative Balance
+                    Balance
                 </td>
             </tr>
         </thead>
         <tbody>
             <tr>
-                <td style="width:80px; text-align:left">
+                <td style="width:80px; text-align:left" colspan="6">
                     Initial Balance
                 </td>
-                <td style="width:20px;"> </td>
                 <td>
-                </td>
-                <td style="width:20px"></td>
-                <td>
-                </td>
-                <td>
-                    @ViewBag.Cumulative[0].ToString("F")
+                    $@ViewBag.Cumulative[0].ToString("F")
                 </td>
             </tr>
             @{int i = 0;
-            @foreach (var transaction in ViewBag.Transactions.Items)
-            {
-                <tr class= @(@ViewBag.Colors[i] == true ? "success" : "danger" )>
-                    <td style="width:80px; text-align:left">
-                        <a href="/chartofaccounts/journalizing?viewonly=true&journalid=@ViewBag.ListJournals[i]">@ViewBag.ListJournals[i] </a>
+                @foreach (var transaction in ViewBag.Transactions.Items)
+                {   
+                    <tr class=@(@ViewBag.Colors[i] == true ? "success" : "danger" )>
+                        <td style="width:80px; text-align:left">
+                            <a href="/chartofaccounts/journalizing?viewonly=true&journalid=@ViewBag.ListJournals[i]"> <b> @ViewBag.ListJournals[i] </b> </a>
+                        </td>
+                        <td>
+                            @ViewBag.ListDates[i].Date.ToString("d")
+                        </td>
+                        <td style="width:20px">@if (transaction.isDebit)
+                        { <p>$</p>}</td>
+                        <td style="width:50px;">
+                            @if (transaction.isDebit)
+                            {
+                                <p> @Convert.ToDecimal(@transaction.Value).ToString("#,##0.00") </p>
+                            }
+                        </td>
+                        <td style="width:20px">@if (!transaction.isDebit)
+                        {<p>$</p>}</td>
+                        <td style="width:50px;">
+                            @if (!transaction.isDebit)
+                            {
+                                <p> @Convert.ToDecimal(@transaction.Value).ToString("#,##0.00") </p>
+                            }
+                        </td>
+                        <td style="width:130px;">
+                            <p> @Convert.ToDecimal(ViewBag.Cumulative[i + 1]).ToString("#,##0.00") </p>
+                        </td>
+                    </tr>
+                    i++;
+                    }
+                <tr>
+                    <td style="width:80px; text-align:left" colspan="6">
+                        As of @DateTime.Now.Date.ToString("d")
                     </td>
-                    <td style="width:20px">@if (transaction.isDebit) { <p>$</p>}</td>
-                    <td style="width:50px;" >
-                        @if (transaction.isDebit)
-                        {
-                            <p> @Convert.ToDecimal(@transaction.Value).ToString("#,##0.00") </p>
-                        }
-                    </td>
-                    <td style="width:20px">@if (!transaction.isDebit){<p>$</p>}</td>
-                    <td style="width:50px;">
-                        @if (!transaction.isDebit)
-                        {
-                            <p> @Convert.ToDecimal(@transaction.Value).ToString("#,##0.00") </p>
-                        }
-                    </td>
-                    <td style="width:130px;">
-                        <p> @Convert.ToDecimal(ViewBag.Cumulative[i+1]).ToString("#,##0.00") </p>
+                    <td>
+                        <p> @Convert.ToDecimal(ViewBag.Cumulative[i]).ToString("#,##0.00") </p>
                     </td>
                 </tr>
-                i++;
-            }
             }
         </tbody>
     </table>
