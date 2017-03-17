@@ -574,14 +574,23 @@ namespace WebApplication1.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> post([FromQuery]string journalid, [FromQuery]string all, string returnUrl = null)
+        public async Task<IActionResult> post([FromQuery]string journalid, string journalIdFromRedurect, [FromQuery]string all, string returnUrl = null)
         {
             var user = await GetCurrentUserAsync();
             if (user == null)
             {
                 return RedirectToAction(nameof(AccountController.Login), "Account");
             }
-            var journals = DbContext.Journals.Where(x => all == null ? x.Id == Convert.ToInt32(journalid) : x.isPosted == false);
+            var journals = DbContext.Journals.Where(x => all == null ? x.Id == Convert.ToInt32(journalIdFromRedurect) : x.isPosted == false);
+            if (journalIdFromRedurect != null)
+            {
+                journals = DbContext.Journals.Where(x => all == null ? x.Id == Convert.ToInt32(journalIdFromRedurect) : x.isPosted == false);
+            }
+            else
+            {
+                journals = DbContext.Journals.Where(x => all == null ? x.Id == Convert.ToInt32(journalid) : x.isPosted == false);
+            }
+
 
             foreach (var journal in journals)
             {
@@ -681,6 +690,58 @@ namespace WebApplication1.Controllers
                 log.EditedOn = DateTime.Now;
                 log.Description = "JournalID " + item.Id + " submitted";
                 DbContext.Entry(log).State = EntityState.Added;
+            }
+            await DbContext.SaveChangesAsync();
+            return RedirectToAction(nameof(ChartOfAccountsController.ViewJournals), "ChartOfAccounts");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> revert([FromQuery]string journalid, string returnUrl = null)
+        {
+            var user = await GetCurrentUserAsync();
+            if (user == null)
+            {
+                return RedirectToAction(nameof(AccountController.Login), "Account");
+            }
+
+            var journal = DbContext.Journals.Where(x => x.Id + "" == journalid).FirstOrDefault();
+            var transactions = DbContext.Transactions.Where(y => y.JournalId == journal.Id);
+            JournalizingViewModel  model = new JournalizingViewModel();
+            model.AddedBy = user.Email;
+            model.AddedOn = DateTime.Now;
+            model.isPosted = false;
+            model.isApproved = false;
+            model.isRejected = false;
+            model.isSubmited = true;
+            DbContext.Journals.Add(model);
+            DbContext.Entry(model).State = EntityState.Added;
+            await DbContext.SaveChangesAsync();
+            foreach (var item in transactions)
+            {
+                if (!item.isDebit) {
+                    Transactions transaction = new Transactions();
+                    transaction.AccountName = item.AccountName;
+                    transaction.isDebit = !item.isDebit;
+                    transaction.JournalId = model.Id;
+                    transaction.Value = item.Value;
+                    transaction.AddedOn = DateTime.Now;
+                    DbContext.Transactions.Add(transaction);
+                    DbContext.Entry(transaction).State = EntityState.Added;
+                }
+            }
+            foreach (var item in transactions)
+            {
+                if (item.isDebit)
+                {
+                    Transactions transaction = new Transactions();
+                    transaction.AccountName = item.AccountName;
+                    transaction.isDebit = !item.isDebit;
+                    transaction.JournalId = model.Id;
+                    transaction.Value = item.Value;
+                    transaction.AddedOn = DateTime.Now;
+                    DbContext.Transactions.Add(transaction);
+                    DbContext.Entry(transaction).State = EntityState.Added;
+                }
             }
             await DbContext.SaveChangesAsync();
             return RedirectToAction(nameof(ChartOfAccountsController.ViewJournals), "ChartOfAccounts");

@@ -128,7 +128,7 @@
     @{ int j = 0; int colors = 0; int v = 0; int journalId = 0;
         @foreach (var item in ViewBag.Transactions)
         {
-            int i = 0;
+            int i = 0; bool firstDebit = true; bool firstCredit = true;
             <table class="table" style="margin-bottom: 0px; width: 1140px;">
                 <tbody style="border-top:1px solid black">
 
@@ -159,7 +159,11 @@
                                 }
                             </td>
                             <td style="width:30px">
-                                $
+                            @if (firstDebit && iteminside.isDebit)
+                            {
+                                <p> $ </p>
+                                firstDebit = false;
+                            }
                             </td>
                             <td style="width:100px; text-align: right;">
                                 @if (iteminside.isDebit)
@@ -176,7 +180,11 @@
                                 }
                             </td>
                             <td style="width:60px;text-align:right">
-                                $
+                                @if (firstCredit && !iteminside.isDebit)
+                                {
+                                    <p> $ </p>
+                                    firstCredit = false;
+                                }
                             </td>
                             <td style="width:100px; text-align: right;">
                                 @if (!iteminside.isDebit)
@@ -234,6 +242,14 @@
                                             <button class="btn-primary btn-xs" value="/chartofaccounts/journalizing?journalid=@iteminside.JournalId" onclick="go(this.value,false)"> Edit </button>
                                             <button class="btn-primary btn-xs" value="/chartofaccounts/delete?journalid=@iteminside.JournalId" onclick="go(this.value,false)"> Delete </button>
                                         }
+                                    }
+
+                                }
+                                else
+                                {
+                                    @if (i == 0)
+                                    {
+                                        <button class="btn-primary btn-xs" style="float:right;"value="/chartofaccounts/revert?journalid=@iteminside.JournalId" onclick="go(this.value,false)"> Revert Journal </button>                                    
                                     }
 
                                 }
